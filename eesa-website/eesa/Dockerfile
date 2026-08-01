@@ -24,8 +24,12 @@ COPY . /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Uploads must be writable by the web server user
-RUN chown -R www-data:www-data /var/www/html/uploads && chmod -R 755 /var/www/html/uploads
+# Uploads must exist and be writable by the web server user — created here
+# rather than relying on empty folders surviving in git (git doesn't track
+# empty directories, so this can't assume they were copied in).
+RUN mkdir -p /var/www/html/uploads/activities /var/www/html/uploads/gallery /var/www/html/uploads/team /var/www/html/uploads/qp \
+    && chown -R www-data:www-data /var/www/html/uploads \
+    && chmod -R 755 /var/www/html/uploads
 
 EXPOSE 80
 
