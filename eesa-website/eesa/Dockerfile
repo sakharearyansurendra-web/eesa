@@ -1,7 +1,11 @@
 FROM php:8.3-apache
 
-# PDO MySQL driver + GD (safe to have for future image handling)
-RUN docker-php-ext-install pdo_mysql
+# unzip + libzip so Composer can download package archives, git for
+# source installs as a fallback, then the PHP extensions we actually use.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip zip libzip-dev git \
+    && docker-php-ext-install pdo_mysql zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Apache: serve from the project root, enable mod_rewrite (not required yet,
 # harmless to have on) and let PHP take over routing that already works via
