@@ -15,7 +15,12 @@ $activeSection = $activeSection ?? '';
 <div class="admin-shell">
   <aside class="admin-side">
     <div class="brand" style="margin-bottom:22px">
-      <span class="brand-mark">EE</span>
+<?php $logoPath = __DIR__ . '/../assets/img/logo.png'; ?>
+<?php if (file_exists($logoPath)): ?>
+  <img src="<?= BASE_URL ?>/assets/img/logo.png" alt="EESA logo" style="width:32px;height:32px;border-radius:8px;object-fit:cover">
+<?php else: ?>
+  <span class="brand-mark">EE</span>
+<?php endif; ?>
       <span class="brand-name" style="font-size:15px">Admin</span>
     </div>
     <a href="<?= BASE_URL ?>/admin/dashboard.php" class="<?= $activeSection==='dashboard'?'active':'' ?>">Dashboard</a>
