@@ -23,6 +23,11 @@ define('DB_PORT', env_or('DB_PORT', '3306'));
 // Set DB_SSL_CA to the absolute path of a CA cert file to enable it;
 // leave unset for local/XAMPP MySQL, which normally has no SSL configured.
 define('DB_SSL_CA', env_or('DB_SSL_CA', ''));
+// Set DB_SSL_VERIFY=false to keep the connection encrypted but skip strict
+// certificate-chain validation — useful when mysqlnd is picky about a
+// provider's cert chain. Fine for testing; leave true for production once
+// it's confirmed working.
+define('DB_SSL_VERIFY', strtolower(env_or('DB_SSL_VERIFY', 'true')) !== 'false');
 
 // Site
 define('SITE_NAME', 'EESA');
@@ -66,10 +71,10 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => false,
     ];
     // Enable SSL when a CA cert path is provided (required by Aiven and
-    // similar managed MySQL hosts). MYSQL_ATTR_SSL_VERIFY_SERVER_CERT is
-    // left on (default) so the connection actually validates the cert.
+    // similar managed MySQL hosts).
     if (DB_SSL_CA !== '') {
         $pdoOptions[PDO::MYSQL_ATTR_SSL_CA] = DB_SSL_CA;
+        $pdoOptions[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = DB_SSL_VERIFY;
     }
     $pdo = new PDO(
         "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4",
@@ -79,7 +84,10 @@ try {
     );
 } catch (Exception $e) {
     http_response_code(500);
-    die('Database connection failed. Check config.php credentials. (' . htmlspecialchars($e->getMessage()) . ')');
+    $certInfo = DB_SSL_CA !== ''
+        ? ' | DB_SSL_CA=' . DB_SSL_CA . ' (exists: ' . (file_exists(DB_SSL_CA) ? 'yes' : 'NO — file not found') . ')'
+        : ' | DB_SSL_CA not set';
+    die('Database connection failed. Check config.php credentials. (' . htmlspecialchars($e->getMessage()) . ')' . htmlspecialchars($certInfo));
 }
 
 require_once __DIR__ . '/includes/functions.php';
