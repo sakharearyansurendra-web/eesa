@@ -17,7 +17,7 @@
         <img src="<?= BASE_URL ?>/assets/img/logo.png" alt="EESA logo" style="width:38px;height:38px;border-radius:8px;object-fit:cover">
       <?php endif; ?>
       <span>
-        <span class="brand-name">EESA</span>
+        <span class="brand-name">Electrical Engineering Students Association</span>
         <span class="brand-tag">by students, for students</span>
       </span>
     </a>
