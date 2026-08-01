@@ -10,18 +10,18 @@
 
 <header class="site">
   <div class="nav-row">
-    <a href="<?= BASE_URL ?>/index.php" class="brand">
-      <span class="brand-mark">EE</span>
+ 
+<a href="<?= BASE_URL ?>/index.php" class="brand">
+      <?php $logoPath = __DIR__ . '/../assets/img/logo.png'; ?>
+      <?php if (file_exists($logoPath)): ?>
+        <img src="<?= BASE_URL ?>/assets/img/logo.png" alt="EESA logo" style="width:38px;height:38px;border-radius:8px;object-fit:cover">
+      <?php endif; ?>
       <span>
-<?php $logoPath = __DIR__ . '/../assets/img/logo.png'; ?>
-<?php if (file_exists($logoPath)): ?>
-  <img src="<?= BASE_URL ?>/assets/img/logo.png" alt="EESA logo" style="width:38px;height:38px;border-radius:8px;object-fit:cover">
-<?php else: ?>
-  <span class="brand-mark">EE</span>
-<?php endif; ?>
+        <span class="brand-name">EESA</span>
         <span class="brand-tag">by students, for students</span>
       </span>
     </a>
+    
     <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
