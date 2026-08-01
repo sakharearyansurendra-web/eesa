@@ -28,10 +28,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key === 'Escape') closeMenu();
   });
 
-  // Disable double-submits
+// Disable double-submits — deferred via setTimeout so the browser finishes
+  // building the form's POST data (which includes this button's name/value,
+  // e.g. name="login") BEFORE we disable it. Disabling synchronously inside
+  // the submit handler silently drops the button from the submitted data,
+  // since disabled form elements are excluded when the entry list is built.
   document.addEventListener('submit', function (e) {
     const btn = e.target.querySelector('button[type=submit]');
-    if (btn) { btn.disabled = true; setTimeout(() => (btn.disabled = false), 4000); }
+    if (btn) {
+      setTimeout(() => {
+        btn.disabled = true;
+        setTimeout(() => (btn.disabled = false), 4000);
+      }, 0);
+    }
   });
 
   // Activities category filter chips (client-side show/hide, no reload)
