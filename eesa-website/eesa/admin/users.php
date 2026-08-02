@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_role(['super_admin']);
-$pageTitle = 'Users & Access';
+$pageTitle = 'Users Access Management';
 $activeSection = 'users';
 $msg = null; $err = null;
 
@@ -168,7 +168,7 @@ $usernameRequests = $pdo->query("SELECT ur.*, u.full_name FROM username_requests
 
 require __DIR__ . '/layout_header.php';
 ?>
-<h1>Users &amp; Access</h1>
+<h1>Users Access Management</h1>
 <p class="muted">This is the privilege center: approve membership requests, assign access levels, and suspend or
 remove accounts. Roles follow EESA's constitution — <span class="mono">super_admin</span> (full control) down
 through <span class="mono">president</span>, <span class="mono">secretary</span>, <span class="mono">treasurer</span>,
