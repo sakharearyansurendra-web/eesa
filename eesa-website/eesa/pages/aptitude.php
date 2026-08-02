@@ -1,63 +1,39 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/mailer.php';
 $pageTitle = 'Aptitude Results';
 
-$OTP_TTL_MIN = 10;
 $err = null; $msg = null;
 
-// Session keys used to carry state through the 3-step flow:
-//  aptitude_regno         -> reg_no currently being verified/verified
-//  aptitude_verified       -> bool, true once OTP is confirmed for that reg_no
+// Session keys used to carry state through the flow:
+//  aptitude_regno     -> reg_no currently verified
+//  aptitude_verified  -> bool, true once reg_no + member_id match
 
-// ---- Step 1: request OTP ----
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_otp'])) {
+// ---- Step 1: verify reg_no + member_id ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_identity'])) {
     csrf_check();
     $reg = trim($_POST['reg_no'] ?? '');
-    if (!$reg) {
-        $err = 'Enter your registration number.';
+    $memberId = trim($_POST['member_id'] ?? '');
+
+    if (!$reg || !$memberId) {
+        $err = 'Enter both your registration number and member ID.';
     } else {
-        $email = $reg . '@' . COLLEGE_DOMAIN;
-        $otp = generate_otp();
-        $hash = password_hash($otp, PASSWORD_DEFAULT);
-        $expires = (new DateTime('+' . $OTP_TTL_MIN . ' minutes'))->format('Y-m-d H:i:s');
-        $pdo->prepare("DELETE FROM otp_codes WHERE purpose = 'aptitude_lookup' AND reference = ?")->execute([$reg]);
-        $pdo->prepare("INSERT INTO otp_codes (purpose, email, reference, otp_hash, expires_at) VALUES ('aptitude_lookup', ?, ?, ?, ?)")
-            ->execute([$email, $reg, $hash, $expires]);
-        $sent = mail_otp($email, $otp, 'Aptitude Result Lookup');
-        if ($sent) {
-            $_SESSION['aptitude_regno'] = $reg;
-            $_SESSION['aptitude_verified'] = false;
-            $msg = "An OTP has been sent to $email. Enter it below (valid for $OTP_TTL_MIN minutes).";
+        // NOTE: adjust table/column names to match your schema
+        $stmt = $pdo->prepare('SELECT reg_no FROM students WHERE reg_no = ? AND member_id = ? LIMIT 1');
+        $stmt->execute([$reg, $memberId]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            $err = 'Registration number and member ID do not match our records.';
         } else {
-            $err = "Couldn't send the OTP email right now. Please try again shortly, or contact " . CONTACT_EMAIL_EESA . " if this keeps happening.";
+            $_SESSION['aptitude_regno'] = $reg;
+            $_SESSION['aptitude_verified'] = true;
+            $msg = 'Verified! Select a test date below to view your result.';
         }
     }
 }
 
-// ---- Step 2: verify OTP ----
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_otp'])) {
-    csrf_check();
-    $reg = $_SESSION['aptitude_regno'] ?? '';
-    $otp = trim($_POST['otp'] ?? '');
-    $stmt = $pdo->prepare("SELECT * FROM otp_codes WHERE purpose = 'aptitude_lookup' AND reference = ? AND consumed = 0 ORDER BY id DESC LIMIT 1");
-    $stmt->execute([$reg]);
-    $row = $stmt->fetch();
-    if (!$reg || !$row) {
-        $err = 'Request a new OTP first.';
-    } elseif (strtotime($row['expires_at']) < time()) {
-        $err = 'OTP expired. Please request a new one.';
-    } elseif (!password_verify($otp, $row['otp_hash'])) {
-        $err = 'Incorrect OTP.';
-    } else {
-        $pdo->prepare('UPDATE otp_codes SET consumed = 1 WHERE id = ?')->execute([$row['id']]);
-        $_SESSION['aptitude_verified'] = true;
-        $msg = 'Verified! Select a test date below to view your result.';
-    }
-}
-
-// ---- Step 3: view a specific result (after verified) ----
-$selectedResult = null; $selectedTest = null;
+// ---- Step 2: view a specific result (after verified) ----
+$selectedResult = null;
 if (!empty($_SESSION['aptitude_verified']) && !empty($_GET['test_id'])) {
     $reg = $_SESSION['aptitude_regno'];
     $testId = (int)$_GET['test_id'];
@@ -86,7 +62,7 @@ require __DIR__ . '/../includes/header.php';
     <div style="max-width:520px;margin:0 auto">
       <div class="eyebrow">Secure lookup</div>
       <h1>Aptitude Results</h1>
-      <p class="muted">Verify your registration number with a one-time password sent to your SGGS email before viewing results.</p>
+      <p class="muted">Enter your registration number and member ID to view your results.</p>
 
       <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
       <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -97,18 +73,14 @@ require __DIR__ . '/../includes/header.php';
             <?= csrf_field() ?>
             <div class="field">
               <label>Registration No.</label>
-              <input name="reg_no" placeholder="e.g. 22UEE045" value="<?= h($_SESSION['aptitude_regno'] ?? '') ?>" required>
+              <input name="reg_no" placeholder="e.g. 22UEE045" value="<?= h($_POST['reg_no'] ?? '') ?>" required>
             </div>
-            <button class="btn btn-primary" type="submit" name="request_otp">Get OTP</button>
+            <div class="field">
+              <label>Member ID</label>
+              <input name="member_id" placeholder="Your member ID" required>
+            </div>
+            <button class="btn btn-primary" type="submit" name="verify_identity">View Results</button>
           </form>
-
-          <?php if (!empty($_SESSION['aptitude_regno'])): ?>
-            <form method="POST" class="stack" style="margin-top:18px">
-              <?= csrf_field() ?>
-              <div class="field"><label>Enter OTP</label><input name="otp" maxlength="6" required></div>
-              <button class="btn btn-outline" type="submit" name="verify_otp">Verify OTP</button>
-            </form>
-          <?php endif; ?>
 
         <?php else: ?>
           <p class="muted">Registration No: <strong class="mono"><?= h($_SESSION['aptitude_regno']) ?></strong>
