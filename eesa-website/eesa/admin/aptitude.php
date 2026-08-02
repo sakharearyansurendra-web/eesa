@@ -46,6 +46,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_csv'])) {
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_test'])) {
+    csrf_check();
+    $testId = (int)$_POST['aptitude_test_id'];
+
+    $stmt = $pdo->prepare('SELECT test_name, question_paper_file FROM aptitude_tests WHERE id=?');
+    $stmt->execute([$testId]);
+    $test = $stmt->fetch();
+
+    if ($test) {
+        $pdo->prepare('DELETE FROM aptitude_results WHERE aptitude_test_id=?')->execute([$testId]);
+        $pdo->prepare('DELETE FROM aptitude_tests WHERE id=?')->execute([$testId]);
+
+        if (!empty($test['question_paper_file'])) {
+            $path = __DIR__ . '/../uploads/qp/' . $test['question_paper_file'];
+            if (is_file($path)) unlink($path);
+        }
+
+        audit($pdo, 'delete_aptitude_test', $test['test_name'] . " (#$testId)");
+        $msg = 'Test and its results deleted.';
+    } else {
+        $err = 'Test not found.';
+    }
+}
+
 $tests = $pdo->query('SELECT t.*, (SELECT COUNT(*) FROM aptitude_results r WHERE r.aptitude_test_id=t.id) AS result_count
                        FROM aptitude_tests t ORDER BY test_date DESC')->fetchAll();
 require __DIR__ . '/layout_header.php';
@@ -77,6 +101,10 @@ require __DIR__ . '/layout_header.php';
       <button class="btn btn-outline btn-sm" type="submit" name="upload_csv">Upload CSV</button>
     </form>
     <p class="muted mono" style="font-size:12px;margin-top:6px">CSV columns: reg_no, score, status, remarks (header row optional)</p>
+    <form method="POST" onsubmit="return confirm('Delete &ldquo;<?= h(addslashes($t['test_name'])) ?>&rdquo; and all its uploaded results? This cannot be undone.');" style="margin-top:10px">
+      <?= csrf_field() ?><input type="hidden" name="aptitude_test_id" value="<?= (int)$t['id'] ?>">
+      <button class="btn btn-danger btn-sm" type="submit" name="delete_test">Delete Test</button>
+    </form>
   </div>
 <?php endforeach; ?>
 <?php require __DIR__ . '/layout_footer.php'; ?>
