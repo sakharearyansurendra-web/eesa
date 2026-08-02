@@ -6,7 +6,7 @@ require_once __DIR__ . '/../includes/mailer.php';
 // deletions, username requests, final account creation) stays super_admin
 // only, enforced per-action below, not just at the page level.
 require_role(['super_admin', 'secretary', 'president']);
-$pageTitle = 'Users & Access';
+$pageTitle = 'User Access Management';
 $activeSection = 'users';
 $msg = null; $err = null;
 $isSuperAdmin = has_role(['super_admin']);
@@ -228,10 +228,12 @@ if ($isSuperAdmin) {
 
 require __DIR__ . '/layout_header.php';
 ?>
-<h1>Users &amp; Access</h1>
+<h2>User Access Management</h2>
 <p class="muted">Join requests move through a verification pipeline before an account is created:
+</p>    
+<p class="muted">
 <strong>Secretary</strong> (Stage 1) &rarr; <strong>President</strong> (Stage 2) &rarr; <strong>Super Admin</strong>
-(final — assigns username &amp; role). Super Admin can finalize from any stage, skipping ahead when needed.</p>
+(final — assigns username &amp; role). </p>
 
 <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
 <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -254,7 +256,7 @@ require __DIR__ . '/layout_header.php';
 <?php endif; ?>
 
 <?php if ($isSecretary || $isSuperAdmin): ?>
-<h2 style="margin-top:28px">Stage 1 — Secretary Review (<?= count($stage1Queue) ?>)</h2>
+<h3 style="margin-top:28px">Stage 1 — Secretary Review (<?= count($stage1Queue) ?>)</h3>
 <?php if (!$stage1Queue): ?><p class="muted">Nothing waiting at Stage 1.</p><?php endif; ?>
 <?php foreach ($stage1Queue as $p): ?>
   <div class="card" style="margin-bottom:12px">
@@ -275,7 +277,7 @@ require __DIR__ . '/layout_header.php';
 <?php endif; ?>
 
 <?php if ($isPresident || $isSuperAdmin): ?>
-<h2 style="margin-top:32px">Stage 2 — President Review (<?= count($stage2Queue) ?>)</h2>
+<h3 style="margin-top:32px">Stage 2 — President Review (<?= count($stage2Queue) ?>)</h3>
 <?php if (!$stage2Queue): ?><p class="muted">Nothing waiting at Stage 2.</p><?php endif; ?>
 <?php foreach ($stage2Queue as $p): ?>
   <div class="card" style="margin-bottom:12px">
@@ -296,7 +298,7 @@ require __DIR__ . '/layout_header.php';
 <?php endif; ?>
 
 <?php if ($isSuperAdmin): ?>
-<h2 style="margin-top:32px">Final Stage — Ready for Your Approval (<?= count($finalQueue) ?>)</h2>
+<h3 style="margin-top:32px">Final Stage — Ready for Your Approval (<?= count($finalQueue) ?>)</h3>
 <?php if (!$finalQueue): ?><p class="muted">Nothing waiting at the final stage.</p><?php endif; ?>
 <?php foreach ($finalQueue as $p): ?>
   <div class="card" style="margin-bottom:14px">
@@ -323,7 +325,7 @@ require __DIR__ . '/layout_header.php';
   </div>
 <?php endforeach; ?>
 
-<h2 style="margin-top:32px">Pending Username Change Requests (<?= count($usernameRequests) ?>)</h2>
+<h3 style="margin-top:32px">Pending Username Change Requests (<?= count($usernameRequests) ?>)</h3>
 <?php if (!$usernameRequests): ?><p class="muted">No pending username change requests.</p><?php endif; ?>
 <?php foreach ($usernameRequests as $r): ?>
   <div class="card" style="margin-bottom:12px">
