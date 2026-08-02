@@ -27,17 +27,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_csv'])) {
         while (($cols = fgetcsv($fh)) !== false) {
             $row++;
             if ($row === 1 && stripos($cols[0], 'reg') !== false) continue; // skip header
-            [$reg, $score, $status, $remarks] = array_map('trim', array_pad($cols, 4, ''));
+            [$reg, $memberId, $score, $status, $remarks] = array_map('trim', array_pad($cols, 5, ''));
             if (!$reg) continue;
             $exists = $pdo->prepare('SELECT id FROM aptitude_results WHERE aptitude_test_id=? AND reg_no=?');
             $exists->execute([$testId, $reg]);
             $id = $exists->fetchColumn();
             if ($id) {
-                $pdo->prepare('UPDATE aptitude_results SET score=?, status=?, remarks=? WHERE id=?')
-                    ->execute([$score, $status, $remarks, $id]); $upd++;
+                $pdo->prepare('UPDATE aptitude_results SET member_id=?, score=?, status=?, remarks=? WHERE id=?')
+                    ->execute([$memberId, $score, $status, $remarks, $id]); $upd++;
             } else {
-                $pdo->prepare('INSERT INTO aptitude_results (aptitude_test_id, reg_no, score, status, remarks) VALUES (?,?,?,?,?)')
-                    ->execute([$testId, $reg, $score, $status, $remarks]); $ins++;
+                $pdo->prepare('INSERT INTO aptitude_results (aptitude_test_id, reg_no, member_id, score, status, remarks) VALUES (?,?,?,?,?,?)')
+                    ->execute([$testId, $reg, $memberId, $score, $status, $remarks]); $ins++;
             }
         }
         fclose($fh);
@@ -100,7 +100,7 @@ require __DIR__ . '/layout_header.php';
       <input type="file" name="results_csv" accept=".csv" required>
       <button class="btn btn-outline btn-sm" type="submit" name="upload_csv">Upload CSV</button>
     </form>
-    <p class="muted mono" style="font-size:12px;margin-top:6px">CSV columns: reg_no, score, status, remarks (header row optional)</p>
+    <p class="muted mono" style="font-size:12px;margin-top:6px">CSV columns: reg_no, member_id, score, status, remarks (header row optional)</p>
     <form method="POST" onsubmit="return confirm('Delete &ldquo;<?= h(addslashes($t['test_name'])) ?>&rdquo; and all its uploaded results? This cannot be undone.');" style="margin-top:10px">
       <?= csrf_field() ?><input type="hidden" name="aptitude_test_id" value="<?= (int)$t['id'] ?>">
       <button class="btn btn-danger btn-sm" type="submit" name="delete_test">Delete Test</button>
