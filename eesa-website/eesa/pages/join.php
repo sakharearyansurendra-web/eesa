@@ -3,11 +3,16 @@ require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/mailer.php';
 $pageTitle = 'Join EESA';
 
-$OTP_TTL_MIN = 10;
 $err = null; $msg = null; $ticketId = null;
 
-// ---- Step 1: submit details, send OTP ----
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_join_otp'])) {
+// Single-step request: no OTP. The person submits their details, we create
+// a pending account and email them a ticket ID right away for reference.
+// Nothing is auto-approved — an admin reviews the request in
+// /admin/users.php and, on approval, the system generates a username +
+// temporary password and emails those credentials (see mail_approval() in
+// includes/mailer.php). Account creation only ever happens through that
+// admin approval step, never automatically.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
     csrf_check();
     $name = trim($_POST['full_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -22,45 +27,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_join_otp'])) {
         if ($row && $row['status'] !== 'rejected') {
             $err = 'A request with this email already exists (status: ' . h($row['status']) . ').';
         } else {
-            $otp = generate_otp();
-            $hash = password_hash($otp, PASSWORD_DEFAULT);
-            $expires = (new DateTime('+' . $OTP_TTL_MIN . ' minutes'))->format('Y-m-d H:i:s');
-            $pdo->prepare("DELETE FROM otp_codes WHERE purpose = 'join_verify' AND email = ?")->execute([$email]);
-            $pdo->prepare("INSERT INTO otp_codes (purpose, email, otp_hash, expires_at) VALUES ('join_verify', ?, ?, ?)")
-                ->execute([$email, $hash, $expires]);
-            mail_otp($email, $otp, 'EESA Membership Verification');
-            $_SESSION['join_name'] = $name;
-            $_SESSION['join_email'] = $email;
-            $_SESSION['join_branch'] = $branch;
-            $msg = "An OTP has been sent to $email. Enter it below to confirm your request.";
+            $ticketId = generate_ticket_id();
+            $pdo->prepare("INSERT INTO users (full_name, email, role, status, ticket_id, email_verified, branch_year)
+                            VALUES (?, ?, 'member', 'pending', ?, 0, ?)")
+                ->execute([$name, $email, $ticketId, $branch]);
+            $sent = mail_join_ticket($email, $name, $ticketId);
+            audit($pdo, 'join_request', "$email ($ticketId)");
+            if (!$sent) {
+                // The request is saved either way — admins can still see and
+                // approve it from /admin/users.php — but let the applicant
+                // know the confirmation email itself may not have landed.
+                $msg = "Request submitted! Your ticket ID is $ticketId — save it for reference. "
+                     . "We couldn't confirm the email sent, so if you don't hear back, contact " . CONTACT_EMAIL_EESA . ".";
+            } else {
+                $msg = "Request submitted! Your ticket ID is $ticketId — we've also emailed it to you. "
+                     . "An admin will review your request; once approved, your username and password will be emailed to you.";
+            }
         }
-    }
-}
-
-// ---- Step 2: verify OTP, create pending user + ticket ----
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_join_otp'])) {
-    csrf_check();
-    $email = $_SESSION['join_email'] ?? '';
-    $otp = trim($_POST['otp'] ?? '');
-    $stmt = $pdo->prepare("SELECT * FROM otp_codes WHERE purpose = 'join_verify' AND email = ? AND consumed = 0 ORDER BY id DESC LIMIT 1");
-    $stmt->execute([$email]);
-    $row = $stmt->fetch();
-
-    if (!$email || !$row) {
-        $err = 'Request a new OTP first.';
-    } elseif (strtotime($row['expires_at']) < time()) {
-        $err = 'OTP expired. Please request a new one.';
-    } elseif (!password_verify($otp, $row['otp_hash'])) {
-        $err = 'Incorrect OTP.';
-    } else {
-        $pdo->prepare('UPDATE otp_codes SET consumed = 1 WHERE id = ?')->execute([$row['id']]);
-        $ticketId = generate_ticket_id();
-        $pdo->prepare('INSERT INTO users (full_name, email, role, status, ticket_id, email_verified, branch_year)
-                        VALUES (?, ?, "member", "pending", ?, 1, ?)')
-            ->execute([$_SESSION['join_name'], $email, $ticketId, $_SESSION['join_branch']]);
-        mail_join_ticket($email, $_SESSION['join_name'], $ticketId);
-        unset($_SESSION['join_name'], $_SESSION['join_email'], $_SESSION['join_branch']);
-        $msg = 'Verified! Your membership request has been submitted.';
     }
 }
 
@@ -71,7 +54,8 @@ require __DIR__ . '/../includes/header.php';
     <div style="max-width:520px;margin:0 auto">
       <div class="eyebrow">Become a member</div>
       <h1>Join EESA</h1>
-      <p class="muted">Verify your email, and an admin will review your request. You'll receive your username and password once approved.</p>
+      <p class="muted">Submit your details below. An admin will review your request — once approved, you'll receive
+      your username and password by email, ready to sign in at the same login page as everyone else.</p>
 
       <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
       <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -80,26 +64,17 @@ require __DIR__ . '/../includes/header.php';
         <div class="form-card">
           <h3>Your Ticket ID</h3>
           <p class="mono" style="font-size:22px;color:var(--copper-lt)"><?= h($ticketId) ?></p>
-          <p class="muted">Keep this for reference. We've also emailed it to you.</p>
+          <p class="muted">Keep this for reference in case you need to follow up.</p>
         </div>
       <?php else: ?>
         <div class="form-card">
-          <?php if (empty($_SESSION['join_email'])): ?>
-            <form method="POST" class="stack">
-              <?= csrf_field() ?>
-              <div class="field"><label>Full Name</label><input name="full_name" required></div>
-              <div class="field"><label>Email</label><input type="email" name="email" required></div>
-              <div class="field"><label>Branch &amp; Year</label><input name="branch_year" placeholder="e.g. EE, 2nd Year" required></div>
-              <button class="btn btn-primary" type="submit" name="send_join_otp">Send OTP</button>
-            </form>
-          <?php else: ?>
-            <p class="muted">OTP sent to <strong class="mono"><?= h($_SESSION['join_email']) ?></strong></p>
-            <form method="POST" class="stack">
-              <?= csrf_field() ?>
-              <div class="field"><label>Enter OTP</label><input name="otp" maxlength="6" required></div>
-              <button class="btn btn-primary" type="submit" name="verify_join_otp">Verify &amp; Submit Request</button>
-            </form>
-          <?php endif; ?>
+          <form method="POST" class="stack">
+            <?= csrf_field() ?>
+            <div class="field"><label>Full Name</label><input name="full_name" required></div>
+            <div class="field"><label>Email</label><input type="email" name="email" required></div>
+            <div class="field"><label>Branch &amp; Year</label><input name="branch_year" placeholder="e.g. EE, 2nd Year" required></div>
+            <button class="btn btn-primary" type="submit" name="submit_join">Submit Request</button>
+          </form>
         </div>
       <?php endif; ?>
     </div>
