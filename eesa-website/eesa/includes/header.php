@@ -10,18 +10,18 @@
 
 <header class="site">
   <div class="nav-row">
- 
-<a href="<?= BASE_URL ?>/index.php" class="brand">
+    <a href="<?= BASE_URL ?>/index.php" class="brand">
       <?php $logoPath = __DIR__ . '/../assets/img/logo.png'; ?>
       <?php if (file_exists($logoPath)): ?>
         <img src="<?= BASE_URL ?>/assets/img/logo.png" alt="EESA logo" style="width:38px;height:38px;border-radius:8px;object-fit:cover">
+      <?php else: ?>
+        <span class="brand-mark">EE</span>
       <?php endif; ?>
       <span>
-        <span class="brand-name">Electrical Engineering Students Association</span>
+        <span class="brand-name">EESA</span>
         <span class="brand-tag">by students, for students</span>
       </span>
     </a>
-    
     <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -43,15 +43,11 @@
     <a href="<?= BASE_URL ?>/admin/dashboard.php">Dashboard</a>
     <a href="<?= BASE_URL ?>/logout.php">Logout (<?= h(current_user()['username']) ?>)</a>
   <?php else: ?>
+    <a href="<?= BASE_URL ?>/login.php">Login</a>
     <div class="side-cta">
       <a href="<?= BASE_URL ?>/pages/join.php" class="btn btn-primary" style="flex:1;text-align:center;border-bottom:none;">Join EESA</a>
     </div>
   <?php endif; ?>
-  <!--
-    Note: there is intentionally no "Login" link here. Admin login lives at
-    /login.php and is reached directly (e.g. bookmarked), never linked from
-    the public menu — see project notes in login.php.
-  -->
 </nav>
 
 <main>
