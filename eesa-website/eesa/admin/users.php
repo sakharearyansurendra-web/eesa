@@ -89,7 +89,7 @@ $approved = $pdo->query("SELECT * FROM users WHERE status IN ('approved','suspen
 
 require __DIR__ . '/layout_header.php';
 ?>
-<h1>Users &amp; Access</h1>
+<h1>Users Access Management</h1>
 <p class="muted">This is the privilege center: approve membership requests, assign access levels, and suspend or remove accounts.
 Roles: <span class="mono">super_admin</span> (full control) · <span class="mono">admin</span> (content) ·
 <span class="mono">aptitude_manager</span> (results only) · <span class="mono">member</span> (no back-office access).</p>
