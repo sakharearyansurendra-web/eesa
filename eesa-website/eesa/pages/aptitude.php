@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_identity'])) {
         $err = 'Enter both your registration number and member ID.';
     } else {
         // NOTE: adjust table/column names to match your schema
-        $stmt = $pdo->prepare('SELECT reg_no FROM students WHERE reg_no = ? AND member_id = ? LIMIT 1');
+        $stmt = $pdo->prepare('SELECT DISTINCT reg_no FROM aptitude_results WHERE reg_no = ? AND member_id = ? LIMIT 1');
         $stmt->execute([$reg, $memberId]);
         $row = $stmt->fetch();
 
@@ -73,7 +73,7 @@ require __DIR__ . '/../includes/header.php';
             <?= csrf_field() ?>
             <div class="field">
               <label>Registration No.</label>
-              <input name="reg_no" placeholder="e.g. 22UEE045" value="<?= h($_POST['reg_no'] ?? '') ?>" required>
+              <input name="reg_no" placeholder="e.g. 20XXBXXXXX" value="<?= h($_POST['reg_no'] ?? '') ?>" required>
             </div>
             <div class="field">
               <label>Member ID</label>
