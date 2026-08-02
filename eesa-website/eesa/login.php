@@ -2,12 +2,13 @@
 /**
  * login.php
  *
- * This is the "back door" for admins and approved members. It is
- * intentionally NOT linked from the public navigation (includes/header.php)
- * or anywhere else on the site — reach it by typing/bookmarking /login.php.
- * Anyone approved (super_admin, admin, aptitude_manager, member) signs in
- * here; what they can do afterwards is decided by their role, checked with
- * require_role() on every back-office page.
+ * A single sign-in form for everyone — students and admins alike. What
+ * happens after login is entirely driven by the signed-in account's stored
+ * role (checked via require_role() on every back-office page): a regular
+ * member sees their dashboard with no back-office access, while
+ * super_admin/admin/aptitude_manager accounts see the relevant management
+ * sections. There's no separate "admin login" — one form, role decides
+ * everything downstream.
  */
 require_once __DIR__ . '/config.php';
 $pageTitle = 'Login';
@@ -48,7 +49,7 @@ require __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container">
     <div style="max-width:420px;margin:60px auto">
-      <div class="eyebrow">Restricted access</div>
+      <div class="eyebrow">Members &amp; admins</div>
       <h1>Sign In</h1>
       <?php if (isset($_GET['denied'])): ?>
         <div class="alert alert-err">You don't have access to that page. Sign in with an authorized account.</div>
