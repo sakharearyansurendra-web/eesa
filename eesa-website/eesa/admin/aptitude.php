@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_role(['super_admin','admin','aptitude_manager']);
+require_role(APTITUDE_ROLES);
 $pageTitle = 'Aptitude Results';
 $activeSection = 'aptitude';
 $msg = null; $err = null;

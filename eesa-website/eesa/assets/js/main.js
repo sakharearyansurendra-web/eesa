@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key === 'Escape') closeMenu();
   });
 
-// Disable double-submits — deferred via setTimeout so the browser finishes
+  // Disable double-submits — deferred via setTimeout so the browser finishes
   // building the form's POST data (which includes this button's name/value,
   // e.g. name="login") BEFORE we disable it. Disabling synchronously inside
   // the submit handler silently drops the button from the submitted data,

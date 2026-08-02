@@ -19,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_member'])) {
     $name = trim($_POST['name']);
     $desig = trim($_POST['designation']);
     $linkedin = trim($_POST['linkedin_url']);
+    $userId = (int)($_POST['user_id'] ?? 0) ?: null;
     $photo = save_upload('photo', 'team');
-    $pdo->prepare('INSERT INTO team_members (team_year_id, name, designation, photo, linkedin_url) VALUES (?,?,?,?,?)')
-        ->execute([$yearId, $name, $desig, $photo, $linkedin]);
+    $pdo->prepare('INSERT INTO team_members (team_year_id, user_id, name, designation, photo, linkedin_url) VALUES (?,?,?,?,?,?)')
+        ->execute([$yearId, $userId, $name, $desig, $photo, $linkedin]);
     $msg = 'Member added.';
 }
 
@@ -37,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_member'])) {
 }
 
 $years = $pdo->query('SELECT * FROM team_years ORDER BY year_label DESC')->fetchAll();
+$linkableUsers = $pdo->query("SELECT id, full_name, username FROM users WHERE status = 'approved' ORDER BY full_name")->fetchAll();
 require __DIR__ . '/layout_header.php';
 ?>
 <h1>Team</h1>
@@ -67,11 +69,12 @@ require __DIR__ . '/layout_header.php';
       $members = $mStmt->fetchAll();
     ?>
     <table class="admin-table">
-      <tr><th>Name</th><th>Designation</th><th></th></tr>
+      <tr><th>Name</th><th>Designation</th><th>Linked Account</th><th></th></tr>
       <?php foreach ($members as $m): ?>
         <tr>
           <td><?= h($m['name']) ?></td>
           <td><?= h($m['designation']) ?></td>
+          <td class="muted mono" style="font-size:12px"><?= $m['user_id'] ? '#' . (int)$m['user_id'] : 'not linked' ?></td>
           <td>
             <form method="POST" style="display:inline">
               <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$m['id'] ?>">
@@ -86,6 +89,14 @@ require __DIR__ . '/layout_header.php';
       <div class="field" style="margin-bottom:0"><input name="name" placeholder="Name" required></div>
       <div class="field" style="margin-bottom:0"><input name="designation" placeholder="Designation" required></div>
       <div class="field" style="margin-bottom:0"><input name="linkedin_url" placeholder="LinkedIn URL"></div>
+      <div class="field" style="margin-bottom:0">
+        <select name="user_id">
+          <option value="">Link to account (optional)</option>
+          <?php foreach ($linkableUsers as $lu): ?>
+            <option value="<?= (int)$lu['id'] ?>"><?= h($lu['full_name']) ?> (<?= h($lu['username']) ?>)</option>
+          <?php endforeach; ?>
+        </select>
+      </div>
       <input type="file" name="photo" accept="image/*">
       <button class="btn btn-outline btn-sm" type="submit" name="add_member">Add Member</button>
     </form>

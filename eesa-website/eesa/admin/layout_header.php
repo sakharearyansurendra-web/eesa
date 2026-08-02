@@ -39,8 +39,10 @@ $activeSection = $activeSection ?? '';
       <a href="<?= BASE_URL ?>/admin/aptitude.php" class="<?= $activeSection==='aptitude'?'active':'' ?>">Aptitude Results</a>
     <?php endif; ?>
 
-    <?php if (has_role(['super_admin'])): ?>
+    <?php if (has_role(['super_admin', 'secretary', 'president'])): ?>
       <a href="<?= BASE_URL ?>/admin/users.php" class="<?= $activeSection==='users'?'active':'' ?>">Users &amp; Access</a>
+    <?php endif; ?>
+    <?php if (has_role(['super_admin'])): ?>
       <a href="<?= BASE_URL ?>/admin/audit.php" class="<?= $activeSection==='audit'?'active':'' ?>">Audit Log</a>
     <?php endif; ?>
 

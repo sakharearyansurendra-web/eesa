@@ -24,10 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_otp'])) {
         $pdo->prepare("DELETE FROM otp_codes WHERE purpose = 'aptitude_lookup' AND reference = ?")->execute([$reg]);
         $pdo->prepare("INSERT INTO otp_codes (purpose, email, reference, otp_hash, expires_at) VALUES ('aptitude_lookup', ?, ?, ?, ?)")
             ->execute([$email, $reg, $hash, $expires]);
-        mail_otp($email, $otp, 'Aptitude Result Lookup');
-        $_SESSION['aptitude_regno'] = $reg;
-        $_SESSION['aptitude_verified'] = false;
-        $msg = "An OTP has been sent to $email. Enter it below (valid for $OTP_TTL_MIN minutes).";
+        $sent = mail_otp($email, $otp, 'Aptitude Result Lookup');
+        if ($sent) {
+            $_SESSION['aptitude_regno'] = $reg;
+            $_SESSION['aptitude_verified'] = false;
+            $msg = "An OTP has been sent to $email. Enter it below (valid for $OTP_TTL_MIN minutes).";
+        } else {
+            $err = "Couldn't send the OTP email right now. Please try again shortly, or contact " . CONTACT_EMAIL_EESA . " if this keeps happening.";
+        }
     }
 }
 

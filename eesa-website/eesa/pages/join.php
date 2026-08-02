@@ -72,8 +72,9 @@ require __DIR__ . '/../includes/header.php';
     <div style="max-width:520px;margin:0 auto">
       <div class="eyebrow">Become a member</div>
       <h1>Join EESA</h1>
-      <p class="muted">Submit your details below. An admin will review your request — once approved, you'll receive
-      your username and password by email, ready to sign in at the same login page as everyone else.</p>
+      <p class="muted">Submit your details below. Your request moves through a short verification pipeline
+      (Secretary → President → Super Admin) — once fully approved, you'll receive your username and password by
+      email, ready to sign in at the same login page as everyone else.</p>
 
       <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
       <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -101,20 +102,17 @@ require __DIR__ . '/../includes/header.php';
         <p class="muted" style="font-size:13px">Already applied? Check your status with your ticket ID or the email you used.</p>
         <?php if ($trackErr): ?><div class="alert alert-err"><?= h($trackErr) ?></div><?php endif; ?>
         <?php if ($trackResult): ?>
+          <?php [$stageLabel, $stageClass] = join_status_label($trackResult['status']); ?>
           <div class="card" style="margin-top:10px">
             <p class="muted" style="margin:0">Applicant: <strong><?= h($trackResult['full_name']) ?></strong></p>
             <p class="mono muted" style="font-size:13px;margin:4px 0">Ticket: <?= h($trackResult['ticket_id']) ?> · Applied <?= h(time_ago($trackResult['created_at'])) ?></p>
-            <p style="margin-top:8px">Status:
-              <?php
-                $statusLabel = ['pending' => 'Pending review', 'approved' => 'Approved', 'rejected' => 'Not approved'];
-                $statusClass = ['pending' => 'badge-notice', 'approved' => 'badge-ongoing', 'rejected' => 'badge-completed'];
-              ?>
-              <span class="badge <?= $statusClass[$trackResult['status']] ?? 'badge-notice' ?>"><?= h($statusLabel[$trackResult['status']] ?? $trackResult['status']) ?></span>
-            </p>
+            <p style="margin-top:8px">Status: <span class="badge <?= h($stageClass) ?>"><?= h($stageLabel) ?></span></p>
             <?php if ($trackResult['status'] === 'approved'): ?>
               <p class="muted" style="font-size:13px;margin-top:8px">Your username and password were emailed to you — check your inbox, then sign in from the Login link in the menu.</p>
-            <?php elseif ($trackResult['status'] === 'pending'): ?>
-              <p class="muted" style="font-size:13px;margin-top:8px">Still waiting on an admin to review this. No action needed on your end.</p>
+            <?php elseif ($trackResult['status'] === 'rejected'): ?>
+              <p class="muted" style="font-size:13px;margin-top:8px">This request wasn't approved. Contact <?= h(CONTACT_EMAIL_EESA) ?> if you have questions.</p>
+            <?php else: ?>
+              <p class="muted" style="font-size:13px;margin-top:8px">No action needed on your end — check back later.</p>
             <?php endif; ?>
           </div>
         <?php endif; ?>

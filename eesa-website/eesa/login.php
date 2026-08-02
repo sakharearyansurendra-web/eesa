@@ -14,7 +14,20 @@ require_once __DIR__ . '/config.php';
 $pageTitle = 'Login';
 $err = null;
 
-if (is_logged_in()) redirect('/admin/dashboard.php');
+// Only bounce an already-logged-in visitor to the dashboard if their stored
+// role is still one we recognize. If it isn't (e.g. a stale session from
+// before a role-list change, or any other mismatch), clear the session and
+// fall through to the normal login form instead — the alternative is an
+// infinite redirect loop, since dashboard.php's require_role() would just
+// send them straight back here.
+if (is_logged_in()) {
+    if (in_array(current_user()['role'], ALL_ROLES, true)) {
+        redirect('/admin/dashboard.php');
+    } else {
+        session_unset();
+        session_regenerate_id(true);
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     csrf_check();

@@ -47,7 +47,7 @@ function mail_otp(string $to, string $otp, string $purposeLabel): bool {
     <div style='font-family:Arial,sans-serif;max-width:480px;margin:auto'>
       <h2 style='color:#0b1220'>EESA — " . h($purposeLabel) . "</h2>
       <p>Your one-time password is:</p>
-      <p style='font-size:28px;font-weight:bold;letter-spacing:4px;color:#c9793f'>" . h($otp) . "</p>
+      <p style='font-size:28px;font-weight:bold;letter-spacing:4px;color:#35d4e8'>" . h($otp) . "</p>
       <p style='color:#555'>This code expires in 10 minutes. If you did not request this, ignore this email.</p>
     </div>";
     return send_mail($to, $subject, $body);
@@ -59,7 +59,7 @@ function mail_join_ticket(string $to, string $name, string $ticketId): bool {
     <div style='font-family:Arial,sans-serif;max-width:480px;margin:auto'>
       <h2 style='color:#0b1220'>Thanks for applying, " . h($name) . "!</h2>
       <p>Your EESA membership request has been received. Keep this ticket ID for reference:</p>
-      <p style='font-size:22px;font-weight:bold;color:#c9793f'>" . h($ticketId) . "</p>
+      <p style='font-size:22px;font-weight:bold;color:#35d4e8'>" . h($ticketId) . "</p>
       <p>An admin will review your request. You'll receive your username and password by email once approved.</p>
     </div>";
     return send_mail($to, $subject, $body);

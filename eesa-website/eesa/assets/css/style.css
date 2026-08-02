@@ -1,28 +1,32 @@
 /* =====================================================================
    EESA — Design tokens
-   Palette: deep indigo-navy + a single copper "circuit trace" accent.
+   Palette: near-black charcoal + live-wire cyan (primary accent, like a
+            energized conductor) + hazard-yellow (secondary "spark" accent,
+            used sparingly — warning labels, hover sparks, live badges).
    Type: Space Grotesk (display) / Inter (body) / IBM Plex Mono (data & labels,
          evokes PCB silkscreen text — used for dates, reg numbers, eyebrows).
-   Signature element: a copper trace-and-node line that threads through the
-   header and section dividers — one motif, used sparingly, not a background.
+   Signature element: a cyan trace-and-node line ("live wire") that threads
+   through the header and section dividers — one motif, used sparingly.
    ===================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root{
-  --navy:      #0b1220;
-  --navy-2:    #10192c;
-  --navy-3:    #16223b;
-  --paper:     #f6f3ec;
-  --ink:       #0b1220;
-  --slate:     #8b96a8;
-  --slate-lt:  #b7c0cf;
-  --copper:    #c9793f;
-  --copper-lt: #e3a06b;
-  --line:      rgba(201,121,63,0.18);
-  --ok:        #4caf82;
-  --warn:      #d9a441;
-  --danger:    #d9605a;
+  --navy:      #060a0e;   /* near-black charcoal background */
+  --navy-2:    #0c1318;   /* card backgrounds */
+  --navy-3:    #101a21;   /* hero/panel backgrounds */
+  --paper:     #eef6f7;   /* main text — slight cyan-white tint */
+  --ink:       #060a0e;
+  --slate:     #7f97a0;   /* muted/secondary text */
+  --slate-lt:  #aec3ca;
+  --copper:    #35d4e8;   /* PRIMARY accent — live-wire cyan */
+  --copper-lt: #7fe8f5;   /* lighter cyan — hover states, glow */
+  --spark:     #f5c518;   /* SECONDARY accent — hazard/spark yellow, sparing use */
+  --spark-lt:  #ffe066;
+  --line:      rgba(53,212,232,0.20);
+  --ok:        #45d18f;
+  --warn:      #f5c518;
+  --danger:    #ff5d5d;
 
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -76,7 +80,7 @@ p{ color:var(--slate-lt); margin:0 0 14px; }
   border:1px solid transparent; cursor:pointer; transition:transform .15s ease, background .15s ease;
 }
 .btn:active{ transform:scale(0.97); }
-.btn-primary{ background:var(--copper); color:#1a0e05; }
+.btn-primary{ background:var(--copper); color:#03191d; }
 .btn-primary:hover{ background:var(--copper-lt); }
 .btn-outline{ background:transparent; border-color:rgba(255,255,255,0.18); color:#fff; }
 .btn-outline:hover{ border-color:var(--copper); color:var(--copper-lt); }
@@ -177,7 +181,7 @@ header.site{
   font-family:var(--font-mono); font-size:12.5px; padding:8px 14px; border-radius:20px;
   border:1px solid rgba(255,255,255,0.12); color:var(--slate-lt); cursor:pointer;
 }
-.chip.active{ background:var(--copper); color:#1a0e05; border-color:var(--copper); }
+.chip.active{ background:var(--copper); color:#03191d; border-color:var(--copper); }
 
 /* ---------- Forms ---------- */
 .field{ margin-bottom:16px; display:flex; flex-direction:column; gap:6px; }

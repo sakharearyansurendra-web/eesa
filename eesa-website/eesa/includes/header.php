@@ -41,6 +41,9 @@
   <a href="<?= BASE_URL ?>/pages/contact.php">Contact</a>
   <?php if (is_logged_in()): ?>
     <a href="<?= BASE_URL ?>/pages/account.php">My Account</a>
+    <?php if (has_role(TEAM_CHANNEL_ROLES)): ?>
+      <a href="<?= BASE_URL ?>/pages/team_channel.php">Team Channel</a>
+    <?php endif; ?>
     <a href="<?= BASE_URL ?>/admin/dashboard.php">Dashboard</a>
     <a href="<?= BASE_URL ?>/logout.php">Logout (<?= h(current_user()['username']) ?>)</a>
   <?php else: ?>
