@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_admin_login(); // Ensure administrative privileges
+require_role(CONTENT_ADMIN_ROLES); // Ensure administrative privileges
 
 $id = (int)($_GET['id'] ?? 0);
 $stmt = $pdo->prepare('
