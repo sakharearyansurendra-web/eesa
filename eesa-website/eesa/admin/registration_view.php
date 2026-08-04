@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_role(CONTENT_ADMIN_ROLES); // Ensure administrative privileges
+require_role(CONTENT_ADMIN_ROLES);
 
 $id = (int)($_GET['id'] ?? 0);
 $stmt = $pdo->prepare('
@@ -30,7 +30,7 @@ require __DIR__ . '/../includes/header.php';
       <div class="field"><label>Email</label><p><?= h($reg['email']) ?></p></div>
       <div class="field"><label>Phone</label><p><?= h($reg['phone']) ?></p></div>
       <div class="field"><label>Branch &amp; Year</label><p><?= h($reg['branch_year'] ?: '—') ?></p></div>
-      <div class="field"><label>Registered At</label><p><?= h(date('d M Y, h:i A', strtotime($reg['created_at']))) ?></p></div>
+      <div class="field"><label>Registered At</label><p><?= h(date('d M Y, h:i A', strtotime($reg['registered_at']))) ?></p></div>
     </div>
   </div>
 </section>
