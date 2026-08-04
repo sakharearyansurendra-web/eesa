@@ -31,7 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_announcement']
     $msg = 'Deleted.';
 }
 
-$list = $pdo->query('SELECT * FROM announcements ORDER BY created_at DESC')->fetchAll();
+$list = $pdo->query('
+    SELECT a.*,
+           (SELECT COUNT(*) FROM announcement_registrations ar WHERE ar.announcement_id = a.id) AS reg_count
+    FROM announcements a
+    ORDER BY a.created_at DESC
+')->fetchAll();
 require __DIR__ . '/layout_header.php';
 ?>
 <h1>Announcements</h1>
@@ -67,6 +72,11 @@ require __DIR__ . '/layout_header.php';
       <td><?= status_badge($status) ?></td>
       <td>
         <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/pages/announcement_view.php?slug=<?= h($a['slug']) ?>" target="_blank">View</a>
+        <?php if ($a['registration_open']): ?>
+          <a class="btn btn-outline btn-sm" href="announcement_registrations.php?id=<?= (int)$a['id'] ?>">
+            Registrations (<?= (int)$a['reg_count'] ?>)
+          </a>
+        <?php endif; ?>
         <form method="POST" style="display:inline" onsubmit="return confirm('Delete this announcement?')">
           <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
           <button class="btn btn-danger btn-sm" type="submit" name="delete_announcement">Delete</button>
