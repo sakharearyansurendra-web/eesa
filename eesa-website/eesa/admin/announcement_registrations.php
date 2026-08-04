@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_role(CONTENT_ADMIN_ROLES); // Ensure administrative privileges
+require_role(CONTENT_ADMIN_ROLES);
 
 $announcement_id = $_GET['id'] ?? null;
 if ($announcement_id) {
@@ -9,7 +9,7 @@ if ($announcement_id) {
         FROM announcement_registrations ar
         JOIN announcements a ON a.id = ar.announcement_id
         WHERE ar.announcement_id = ?
-        ORDER BY ar.created_at DESC
+        ORDER BY ar.registered_at DESC
     ');
     $stmt->execute([$announcement_id]);
     $registrations = $stmt->fetchAll();
@@ -18,7 +18,7 @@ if ($announcement_id) {
         SELECT ar.*, a.title AS announcement_title 
         FROM announcement_registrations ar
         JOIN announcements a ON a.id = ar.announcement_id
-        ORDER BY ar.created_at DESC
+        ORDER BY ar.registered_at DESC
     ')->fetchAll();
 }
 $pageTitle = 'Announcement Registrations';
@@ -55,7 +55,7 @@ require __DIR__ . '/../includes/header.php';
               <td><?= h($reg['email']) ?></td>
               <td><?= h($reg['phone']) ?></td>
               <td><?= h($reg['branch_year']) ?></td>
-              <td><?= h(date('d M Y, h:i A', strtotime($reg['created_at']))) ?></td>
+              <td><?= h(date('d M Y, h:i A', strtotime($reg['registered_at']))) ?></td>
             </tr>
           <?php endforeach; ?>
         <?php endif; ?>
