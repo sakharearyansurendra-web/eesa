@@ -394,3 +394,108 @@ require __DIR__ . '/layout_header.php';
 <?php endif; ?>
 
 <?php require __DIR__ . '/layout_footer.php'; ?>
+<?php
+require_once __DIR__ . '/../config.php';
+require_admin_login();
+
+$userId = $_GET['id'] ?? null;
+if (!$userId) { die('User ID required.'); }
+
+$stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
+$stmt->execute([$userId]);
+$user = $stmt->fetch();
+if (!$user) { die('User not found.'); }
+
+$isSuperAdmin = ($_SESSION['user_role'] ?? '') === 'super_admin';
+$msg = $err = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
+    csrf_check();
+    
+    // Base field updates
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
+    $personal_email = trim($_POST['personal_email']);
+    $phone = trim($_POST['phone']);
+    $linkedin_url = trim($_POST['linkedin_url']);
+    $github_url = trim($_POST['github_url']);
+    $instagram_url = trim($_POST['instagram_url']);
+    $position = trim($_POST['position']);
+    $year_of_study = trim($_POST['year_of_study']);
+
+    // Generate Member ID if becoming a member and doesn't have one
+    $member_id = $user['member_id'];
+    if (!$member_id && isset($_POST['assign_member_id'])) {
+        $member_id = 'EESA-' . date('Y') . '-' . str_pad($user['id'], 4, '0', STR_PAD_LEFT);
+    }
+
+    // Super Admin password overwrite
+    $password_sql = '';
+    $params = [$name, $email, $personal_email, $phone, $linkedin_url, $github_url, $instagram_url, $position, $year_of_study, $member_id];
+
+    if ($isSuperAdmin && !empty($_POST['new_password'])) {
+        $password_sql = ', password = ?';
+        $params[] = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+    }
+
+    $params[] = $userId;
+
+    $sql = "UPDATE users SET name=?, email=?, personal_email=?, phone=?, linkedin_url=?, github_url=?, instagram_url=?, position=?, year_of_study=?, member_id=? $password_sql WHERE id=?";
+    $stmt = $pdo->prepare($sql);
+    if ($stmt->execute($params)) {
+        $msg = 'User profile updated successfully.';
+        // Refresh local array
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+    } else {
+        $err = 'Failed to update user profile.';
+    }
+}
+
+$pageTitle = 'Manage Profile - ' . h($user['name']);
+require __DIR__ . '/../includes/header.php';
+?>
+<section class="section">
+  <div class="container" style="max-width:720px">
+    <h1>Manage User: <?= h($user['name']) ?></h1>
+    
+    <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
+    <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
+
+    <form method="POST" class="stack">
+      <?= csrf_field() ?>
+      <div class="field">
+        <label>Member ID (Visible to Admins/Leadership)</label>
+        <input type="text" value="<?= h($user['member_id'] ?? 'Not Generated') ?>" readonly>
+        <?php if (!$user['member_id']): ?>
+          <label><input type="checkbox" name="assign_member_id" value="1"> Generate Member ID now</label>
+        <?php endif; ?>
+      </div>
+
+      <div class="field"><label>Full Name</label><input name="name" value="<?= h($user['name']) ?>" required></div>
+      <div class="field"><label>Primary Email</label><input type="email" name="email" value="<?= h($user['email']) ?>" required></div>
+      <div class="field"><label>Personal Email</label><input type="email" name="personal_email" value="<?= h($user['personal_email']) ?>"></div>
+      <div class="field"><label>Phone</label><input name="phone" value="<?= h($user['phone']) ?>"></div>
+      <div class="field"><label>Position / Role</label><input name="position" value="<?= h($user['position']) ?>"></div>
+      <div class="field"><label>Year of Study</label><input name="year_of_study" value="<?= h($user['year_of_study']) ?>"></div>
+      
+      <h4>Social Handles</h4>
+      <div class="field"><label>LinkedIn URL</label><input name="linkedin_url" value="<?= h($user['linkedin_url']) ?>"></div>
+      <div class="field"><label>GitHub URL</label><input name="github_url" value="<?= h($user['github_url']) ?>"></div>
+      <div class="field"><label>Instagram URL</label><input name="instagram_url" value="<?= h($user['instagram_url']) ?>"></div>
+
+      <?php if ($isSuperAdmin): ?>
+        <hr>
+        <h4>Super Admin Overrides</h4>
+        <div class="field">
+          <label>Overwrite Password</label>
+          <input type="password" name="new_password" placeholder="Leave empty to keep unchanged">
+        </div>
+      <?php endif; ?>
+
+      <button type="submit" name="update_user" class="btn btn-primary">Save Changes</button>
+    </form>
+  </div>
+</section>
+<?php require __DIR__ . '/../includes/footer.php'; ?>
