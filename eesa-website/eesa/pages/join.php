@@ -4,7 +4,6 @@ require_once __DIR__ . '/../includes/mailer.php';
 $pageTitle = 'Join EESA';
 
 $err = null; $msg = null; $ticketId = null;
-$trackResult = null; $trackErr = null;
 
 // Single-step request: no OTP. The person submits their details, we create
 // a pending account and email them a ticket ID right away for reference.
@@ -48,23 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
     }
 }
 
-// Track an existing request by ticket ID or email — no login needed, since
-// the applicant doesn't have an account yet.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['track_request'])) {
-    csrf_check();
-    $lookup = trim($_POST['lookup'] ?? '');
-    if (!$lookup) {
-        $trackErr = 'Enter your ticket ID or the email you applied with.';
-    } else {
-        $stmt = $pdo->prepare('SELECT full_name, status, ticket_id, created_at FROM users WHERE ticket_id = ? OR email = ? LIMIT 1');
-        $stmt->execute([$lookup, $lookup]);
-        $trackResult = $stmt->fetch();
-        if (!$trackResult) {
-            $trackErr = 'No request found with that ticket ID or email.';
-        }
-    }
-}
-
 require __DIR__ . '/../includes/header.php';
 ?>
 <section class="section">
@@ -72,9 +54,8 @@ require __DIR__ . '/../includes/header.php';
     <div style="max-width:520px;margin:0 auto">
       <div class="eyebrow">Become a member</div>
       <h1>Join EESA</h1>
-      <p class="muted">Submit your details below. Your request moves through a short verification pipeline
-      (Secretary → President → Super Admin) — once fully approved, you'll receive your username and password by
-      email, ready to sign in at the same login page as everyone else.</p>
+      <p class="muted">Submit your details below. An admin will review your request — once approved, you'll receive
+      your username and password by email, ready to sign in at the same login page as everyone else.</p>
 
       <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
       <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -96,63 +77,7 @@ require __DIR__ . '/../includes/header.php';
           </form>
         </div>
       <?php endif; ?>
-
-      <div class="form-card" style="margin-top:28px">
-        <h3>Track Your Request</h3>
-        <p class="muted" style="font-size:13px">Already applied? Check your status with your ticket ID or the email you used.</p>
-        <?php if ($trackErr): ?><div class="alert alert-err"><?= h($trackErr) ?></div><?php endif; ?>
-        <?php if ($trackResult): ?>
-          <?php [$stageLabel, $stageClass] = join_status_label($trackResult['status']); ?>
-          <div class="card" style="margin-top:10px">
-            <p class="muted" style="margin:0">Applicant: <strong><?= h($trackResult['full_name']) ?></strong></p>
-            <p class="mono muted" style="font-size:13px;margin:4px 0">Ticket: <?= h($trackResult['ticket_id']) ?> · Applied <?= h(time_ago($trackResult['created_at'])) ?></p>
-            <p style="margin-top:8px">Status: <span class="badge <?= h($stageClass) ?>"><?= h($stageLabel) ?></span></p>
-            <?php if ($trackResult['status'] === 'approved'): ?>
-              <p class="muted" style="font-size:13px;margin-top:8px">Your username and password were emailed to you — check your inbox, then sign in from the Login link in the menu.</p>
-            <?php elseif ($trackResult['status'] === 'rejected'): ?>
-              <p class="muted" style="font-size:13px;margin-top:8px">This request wasn't approved. Contact <?= h(CONTACT_EMAIL_EESA) ?> if you have questions.</p>
-            <?php else: ?>
-              <p class="muted" style="font-size:13px;margin-top:8px">No action needed on your end — check back later.</p>
-            <?php endif; ?>
-          </div>
-        <?php endif; ?>
-        <form method="POST" class="stack" style="margin-top:12px">
-          <?= csrf_field() ?>
-          <div class="field"><label>Ticket ID or Email</label><input name="lookup" placeholder="EESA-26-XXXXXX or your email" required></div>
-          <button class="btn btn-outline" type="submit" name="track_request">Check Status</button>
-        </form>
-      </div>
     </div>
   </div>
 </section>
 <?php require __DIR__ . '/../includes/footer.php'; ?>
-<?php
-require_once __DIR__ . '/config.php';
-
-$email = trim($_POST['email'] ?? '');
-$msg = $err = null;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_application'])) {
-    csrf_check();
-    
-    // Check for existing application
-    $stmt = $pdo->prepare('SELECT * FROM user_applications WHERE email = ?');
-    $stmt->execute([$email]);
-    $existing = $stmt->fetch();
-
-    if ($existing) {
-        if ($existing['status'] === 'rejected' && $existing['reapply_allowed']) {
-            // Update existing record for re-application
-            $update = $pdo->prepare('UPDATE user_applications SET status = "pending", created_at = NOW() WHERE id = ?');
-            $update->execute([$existing['id']]);
-            $msg = 'Your application has been resubmitted successfully!';
-        } else if ($existing['status'] === 'pending') {
-            $err = 'You already have a pending application.';
-        } else {
-            $err = 'An application with this email address already exists.';
-        }
-    } else {
-        // Handle new submission standard logic...
-    }
-}
-?>
