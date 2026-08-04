@@ -126,3 +126,33 @@ require __DIR__ . '/../includes/header.php';
   </div>
 </section>
 <?php require __DIR__ . '/../includes/footer.php'; ?>
+<?php
+require_once __DIR__ . '/config.php';
+
+$email = trim($_POST['email'] ?? '');
+$msg = $err = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_application'])) {
+    csrf_check();
+    
+    // Check for existing application
+    $stmt = $pdo->prepare('SELECT * FROM user_applications WHERE email = ?');
+    $stmt->execute([$email]);
+    $existing = $stmt->fetch();
+
+    if ($existing) {
+        if ($existing['status'] === 'rejected' && $existing['reapply_allowed']) {
+            // Update existing record for re-application
+            $update = $pdo->prepare('UPDATE user_applications SET status = "pending", created_at = NOW() WHERE id = ?');
+            $update->execute([$existing['id']]);
+            $msg = 'Your application has been resubmitted successfully!';
+        } else if ($existing['status'] === 'pending') {
+            $err = 'You already have a pending application.';
+        } else {
+            $err = 'An application with this email address already exists.';
+        }
+    } else {
+        // Handle new submission standard logic...
+    }
+}
+?>
