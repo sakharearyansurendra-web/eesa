@@ -3,7 +3,6 @@ require_once __DIR__ . '/../config.php';
 require_admin_login(); // Ensure administrative privileges
 
 $announcement_id = $_GET['id'] ?? null;
-
 if ($announcement_id) {
     $stmt = $pdo->prepare('
         SELECT ar.*, a.title AS announcement_title 
@@ -22,13 +21,18 @@ if ($announcement_id) {
         ORDER BY ar.created_at DESC
     ')->fetchAll();
 }
-
 $pageTitle = 'Announcement Registrations';
 require __DIR__ . '/../includes/header.php';
 ?>
 <section class="section">
   <div class="container">
     <h1>Event Registrations</h1>
+    <?php if ($announcement_id): ?>
+      <p><a href="announcements.php">&larr; Back to all announcements</a></p>
+      <?php if (!empty($registrations)): ?>
+        <p class="muted">Showing registrations for: <strong><?= h($registrations[0]['announcement_title']) ?></strong></p>
+      <?php endif; ?>
+    <?php endif; ?>
     <table class="table">
       <thead>
         <tr>
@@ -45,7 +49,7 @@ require __DIR__ . '/../includes/header.php';
           <tr><td colspan="6">No registrations found.</td></tr>
         <?php else: ?>
           <?php foreach ($registrations as $reg): ?>
-            <tr>
+            <tr onclick="location.href='registration_view.php?id=<?= (int)$reg['id'] ?>'" style="cursor:pointer">
               <td><?= h($reg['announcement_title']) ?></td>
               <td><?= h($reg['name']) ?></td>
               <td><?= h($reg['email']) ?></td>
