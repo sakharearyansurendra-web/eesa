@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_admin_login(); // Ensure administrative privileges
+require_role(CONTENT_ADMIN_ROLES); // Ensure administrative privileges
 
 $announcement_id = $_GET['id'] ?? null;
 if ($announcement_id) {
