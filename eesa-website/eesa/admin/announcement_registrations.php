@@ -21,6 +21,31 @@ if ($announcement_id) {
         ORDER BY ar.registered_at DESC
     ')->fetchAll();
 }
+
+// --- CSV export (opens cleanly in Excel) ---
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $filenameBase = $announcement_id && !empty($registrations)
+        ? slugify($registrations[0]['announcement_title'])
+        : 'all-events';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="registrations-' . $filenameBase . '-' . date('Y-m-d') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputs($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel renders special characters correctly
+    fputcsv($out, ['Event', 'Name', 'Email', 'Phone', 'Branch & Year', 'Registered At']);
+    foreach ($registrations as $reg) {
+        fputcsv($out, [
+            $reg['announcement_title'],
+            $reg['name'],
+            $reg['email'],
+            $reg['phone'],
+            $reg['branch_year'],
+            date('d M Y, h:i A', strtotime($reg['registered_at'])),
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 $pageTitle = 'Announcement Registrations';
 require __DIR__ . '/../includes/header.php';
 ?>
@@ -33,7 +58,16 @@ require __DIR__ . '/../includes/header.php';
         <p class="muted">Showing registrations for: <strong><?= h($registrations[0]['announcement_title']) ?></strong></p>
       <?php endif; ?>
     <?php endif; ?>
-    <table class="table">
+
+    <div style="display:flex;gap:10px;margin:16px 0">
+      <a class="btn btn-primary btn-sm" href="?<?= $announcement_id ? 'id=' . (int)$announcement_id . '&' : '' ?>export=csv">
+        Download as Excel (CSV)
+      </a>
+      <button type="button" class="btn btn-outline btn-sm" id="copyTableBtn">Copy Table</button>
+    </div>
+    <span id="copyStatus" class="muted" style="display:none;margin-left:4px">Copied!</span>
+
+    <table class="table" id="regTable">
       <thead>
         <tr>
           <th>Event</th>
@@ -63,4 +97,32 @@ require __DIR__ . '/../includes/header.php';
     </table>
   </div>
 </section>
+<style>
+  #regTable { border-collapse: collapse; width: 100%; }
+  #regTable th, #regTable td {
+    padding: 10px 12px;
+    border: 1px solid #e2e2e2;
+    text-align: left;
+    font-size: 14px;
+  }
+  #regTable thead th {
+    background: #f6f6f6;
+    font-weight: 600;
+  }
+  #regTable tbody tr:hover { background: #fafafa; }
+</style>
+<script>
+document.getElementById('copyTableBtn').addEventListener('click', function () {
+  const table = document.getElementById('regTable');
+  const rows = Array.from(table.querySelectorAll('tr'));
+  const text = rows.map(row =>
+    Array.from(row.querySelectorAll('th,td')).map(cell => cell.textContent.trim()).join('\t')
+  ).join('\n');
+  navigator.clipboard.writeText(text).then(function () {
+    const status = document.getElementById('copyStatus');
+    status.style.display = 'inline';
+    setTimeout(() => { status.style.display = 'none'; }, 1500);
+  });
+});
+</script>
 <?php require __DIR__ . '/../includes/footer.php'; ?>
