@@ -1,0 +1,62 @@
+<?php
+require_once __DIR__ . '/../config.php';
+require_admin_login(); // Ensure administrative privileges
+
+$announcement_id = $_GET['id'] ?? null;
+
+if ($announcement_id) {
+    $stmt = $pdo->prepare('
+        SELECT ar.*, a.title AS announcement_title 
+        FROM announcement_registrations ar
+        JOIN announcements a ON a.id = ar.announcement_id
+        WHERE ar.announcement_id = ?
+        ORDER BY ar.created_at DESC
+    ');
+    $stmt->execute([$announcement_id]);
+    $registrations = $stmt->fetchAll();
+} else {
+    $registrations = $pdo->query('
+        SELECT ar.*, a.title AS announcement_title 
+        FROM announcement_registrations ar
+        JOIN announcements a ON a.id = ar.announcement_id
+        ORDER BY ar.created_at DESC
+    ')->fetchAll();
+}
+
+$pageTitle = 'Announcement Registrations';
+require __DIR__ . '/../includes/header.php';
+?>
+<section class="section">
+  <div class="container">
+    <h1>Event Registrations</h1>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Branch & Year</th>
+          <th>Registered At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (empty($registrations)): ?>
+          <tr><td colspan="6">No registrations found.</td></tr>
+        <?php else: ?>
+          <?php foreach ($registrations as $reg): ?>
+            <tr>
+              <td><?= h($reg['announcement_title']) ?></td>
+              <td><?= h($reg['name']) ?></td>
+              <td><?= h($reg['email']) ?></td>
+              <td><?= h($reg['phone']) ?></td>
+              <td><?= h($reg['branch_year']) ?></td>
+              <td><?= h(date('d M Y, h:i A', strtotime($reg['created_at']))) ?></td>
+            </tr>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </tbody>
+    </table>
+  </div>
+</section>
+<?php require __DIR__ . '/../includes/footer.php'; ?>
