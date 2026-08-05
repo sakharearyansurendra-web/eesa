@@ -105,11 +105,13 @@ require __DIR__ . '/../includes/header.php';
     text-align: left;
     font-size: 14px;
   }
+  #regTable, #regTable thead th, #regTable tbody td, #regTable tbody tr {
+    background: transparent;
+  }
   #regTable thead th {
-    background: #f6f6f6;
     font-weight: 600;
   }
-  #regTable tbody tr:hover { background: #fafafa; }
+  #regTable tbody tr:hover { background: rgba(0,0,0,0.03); }
 </style>
 <script>
 document.getElementById('copyTableBtn').addEventListener('click', function () {
