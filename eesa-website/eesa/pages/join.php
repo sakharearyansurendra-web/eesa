@@ -46,7 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
         }
     }
 }
-
+$trackResult = null; $trackErr = null;
+if (isset($_GET['ticket_id']) && trim($_GET['ticket_id']) !== '') {
+    $tid = trim($_GET['ticket_id']);
+    $stmt = $pdo->prepare('SELECT full_name, status, ticket_id, created_at FROM users WHERE ticket_id = ? LIMIT 1');
+    $stmt->execute([$tid]);
+    $trackResult = $stmt->fetch();
+    if (!$trackResult) $trackErr = 'No request found with that ticket ID.';
+}
 require __DIR__ . '/../includes/header.php';
 ?>
 <section class="section">
