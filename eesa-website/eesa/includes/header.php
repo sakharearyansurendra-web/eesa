@@ -18,8 +18,8 @@
         <span class="brand-mark">EE</span>
       <?php endif; ?>
       <span>
-        <span class="brand-name">EESA</span>
-        <span class="brand-tag">by students, for students</span>
+        <span class="brand-name">Electrical Engineering Students Association</span>
+        <span class="brand-tag">by the students, for the students</span>
       </span>
     </a>
     <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">
