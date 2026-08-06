@@ -13,7 +13,7 @@ const CONTENT_ADMIN_ROLES = ['super_admin', 'admin', 'president', 'secretary', '
 const APTITUDE_ROLES = ['super_admin', 'admin', 'aptitude_manager'];
 const ALL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager', 'member'];
 const ASSIGNABLE_ROLES = ['member', 'joint_coordinator', 'treasurer', 'csd', 'media_head', 'prm', 'secretary', 'president', 'aptitude_manager', 'admin']; // super_admin excluded — promoted separately, never via approval/role-change forms
-const TEAM_CHANNEL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager']; // every approved role except plain "member"
+
 
 /** Human-readable label + badge class for a join request's pipeline stage. */
 function join_status_label($status) {
