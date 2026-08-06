@@ -65,14 +65,29 @@ function mail_join_ticket(string $to, string $name, string $ticketId): bool {
     return send_mail($to, $subject, $body);
 }
 
-function mail_approval(string $to, string $name, string $username, string $tempPassword): bool {
+function mail_approval(string $to, string $name, string $username, string $tempPassword, ?string $memberId = null): bool {
     $subject = "Welcome to EESA — Your Login Details";
+    $memberLine = $memberId ? "<p>Member ID: <b>" . h($memberId) . "</b></p>" : '';
     $body = "
     <div style='font-family:Arial,sans-serif;max-width:480px;margin:auto'>
       <h2 style='color:#0b1220'>Welcome aboard, " . h($name) . "!</h2>
       <p>Your EESA account has been approved. Here are your login details:</p>
       <p>Username: <b>" . h($username) . "</b><br>Temporary Password: <b>" . h($tempPassword) . "</b></p>
+      $memberLine
       <p style='color:#555'>Please log in and change your password as soon as possible.</p>
+    </div>";
+    return send_mail($to, $subject, $body);
+}
+
+function mail_password_reset(string $to, string $name, string $username, string $newPassword): bool {
+    $subject = "EESA — Your Password Has Been Reset";
+    $body = "
+    <div style='font-family:Arial,sans-serif;max-width:480px;margin:auto'>
+      <h2 style='color:#0b1220'>Hi " . h($name) . ",</h2>
+      <p>Your EESA account password has been reset as requested. Here are your updated login details:</p>
+      <p>Username: <b>" . h($username) . "</b><br>New Password: <b>" . h($newPassword) . "</b></p>
+      <p style='color:#555'>Please log in and change this password as soon as possible from My Account.</p>
+      <p style='color:#555'>If you did not request this, contact an admin immediately.</p>
     </div>";
     return send_mail($to, $subject, $body);
 }
