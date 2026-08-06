@@ -24,7 +24,7 @@ function approval_draft_text($fullName, $username, $tempPass, $memberId = null) 
          . "Username: $username\n"
          . "Temporary Password: $tempPass\n"
          . $memberLine . "\n"
-         . "Please log in to https://eesa-i2c5.onrender.com/ and change your password as soon as possible.\n\n"
+         . "Please log in and change your password as soon as possible.\n\n"
          . "— EESA Team";
 }
 
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_user'])) {
             if ($exists->fetch()) {
                 $err = 'That username is already taken.';
             } else {
-               $tempPass = random_password();
+                $tempPass = random_password();
                 $member_id = $target['member_id'] ?: generate_member_id($id);
                 $pdo->prepare("UPDATE users SET username=?, password_hash=?, role=?, status='approved', approved_at=NOW(), approved_by=?, member_id=? WHERE id=?")
                     ->execute([$username, password_hash($tempPass, PASSWORD_DEFAULT), $role, current_user()['id'], $member_id, $id]);
@@ -229,6 +229,29 @@ if ($isSuperAdmin) {
     $usernameRequests = $usernameRequests->fetchAll();
 }
 
+// ---- CSV export of all accounts (super_admin only) — opens cleanly in Excel ----
+if ($isSuperAdmin && isset($_GET['export']) && $_GET['export'] === 'csv') {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="eesa-accounts-' . date('Y-m-d') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputs($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel renders special characters correctly
+    fputcsv($out, ['Full Name', 'Username', 'Member ID', 'Email', 'Role', 'Status', 'Branch & Year', 'Approved At']);
+    foreach ($approved as $a) {
+        fputcsv($out, [
+            $a['full_name'],
+            $a['username'],
+            $a['member_id'] ?: '',
+            $a['email'],
+            role_label($a['role']),
+            $a['status'],
+            $a['branch_year'],
+            $a['approved_at'] ? date('d M Y, h:i A', strtotime($a['approved_at'])) : '',
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 require __DIR__ . '/layout_header.php';
 ?>
 <h2>User Access Management</h2>
@@ -237,6 +260,31 @@ require __DIR__ . '/layout_header.php';
 <p class="muted">
 <strong>Secretary</strong> (Stage 1) &rarr; <strong>President</strong> (Stage 2) &rarr; <strong>Super Admin</strong>
 (final — assigns username &amp; role). </p>
+
+<div class="grid grid-4" style="margin:20px 0">
+  <?php if ($isSecretary || $isSuperAdmin): ?>
+    <div class="card">
+      <div class="meta">Stage 1 — Secretary Review</div>
+      <h2 style="margin:0"><?= count($stage1Queue) ?></h2>
+    </div>
+  <?php endif; ?>
+  <?php if ($isPresident || $isSuperAdmin): ?>
+    <div class="card">
+      <div class="meta">Stage 2 — President Review</div>
+      <h2 style="margin:0"><?= count($stage2Queue) ?></h2>
+    </div>
+  <?php endif; ?>
+  <?php if ($isSuperAdmin): ?>
+    <div class="card">
+      <div class="meta">Final — Your Approval</div>
+      <h2 style="margin:0"><?= count($finalQueue) ?></h2>
+    </div>
+    <div class="card">
+      <div class="meta">Username Change Requests</div>
+      <h2 style="margin:0"><?= count($usernameRequests) ?></h2>
+    </div>
+  <?php endif; ?>
+</div>
 
 <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
 <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -349,12 +397,18 @@ require __DIR__ . '/layout_header.php';
   </div>
 <?php endforeach; ?>
 
-<h2 style="margin-top:32px">All Accounts</h2>
+<div class="section-head" style="margin-top:32px;margin-bottom:0">
+  <h2 style="margin:0">All Accounts</h2>
+  <a class="btn btn-outline btn-sm" href="?export=csv">Download as Excel (CSV)</a>
+</div>
 <table class="admin-table">
-  <tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+  <tr><th>Name</th><th>Username</th><th>Member ID</th><th>Role</th><th>Status</th><th>Actions</th></tr>
   <?php foreach ($approved as $a): ?>
     <tr>
-      <td><?= h($a['full_name']) ?><br><span class="muted mono" style="font-size:12px"><?= h($a['email']) ?></span></td>
+      <td>
+        <a href="user_view.php?id=<?= (int)$a['id'] ?>" style="color:var(--copper-lt);font-weight:600"><?= h($a['full_name']) ?></a>
+        <br><span class="muted mono" style="font-size:12px"><?= h($a['email']) ?></span>
+      </td>
       <td>
         <form method="POST" style="display:flex;gap:6px;align-items:center">
           <?= csrf_field() ?>
@@ -363,6 +417,7 @@ require __DIR__ . '/layout_header.php';
           <button class="btn btn-outline btn-sm" type="submit" name="edit_username">Save</button>
         </form>
       </td>
+      <td class="mono"><?= h($a['member_id'] ?: '—') ?></td>
       <td>
         <form method="POST" style="display:flex;gap:6px;align-items:center">
           <?= csrf_field() ?>
@@ -377,6 +432,7 @@ require __DIR__ . '/layout_header.php';
       </td>
       <td><span class="pill pill-<?= h($a['status']) ?>"><?= h($a['status']) ?></span></td>
       <td>
+        <a class="btn btn-outline btn-sm" href="user_view.php?id=<?= (int)$a['id'] ?>">View Profile</a>
         <form method="POST" style="display:inline">
           <?= csrf_field() ?>
           <input type="hidden" name="user_id" value="<?= (int)$a['id'] ?>">
