@@ -107,11 +107,12 @@ require __DIR__ . '/layout_header.php';
 <h3 style="margin-top:28px">Recently Resolved</h3>
 <?php if (!$resolved): ?><p class="muted">No resolved requests yet.</p><?php endif; ?>
 <table class="admin-table">
-  <tr><th>Member</th><th>Status</th><th>Resolved</th></tr>
+  <tr><th>Member</th><th>Status</th><th>Approved By</th><th>Resolved</th></tr>
   <?php foreach ($resolved as $r): ?>
     <tr>
       <td><?= h($r['full_name']) ?> <span class="muted mono" style="font-size:12px">@<?= h($r['username']) ?></span></td>
       <td><span class="pill pill-<?= h($r['status']) ?>"><?= h($r['status']) ?></span></td>
+      <td class="muted"><?= h($r['resolver_name'] ?? '—') ?></td>
       <td class="muted mono" style="font-size:12px"><?= $r['resolved_at'] ? h(time_ago($r['resolved_at'])) : '—' ?></td>
     </tr>
   <?php endforeach; ?>
