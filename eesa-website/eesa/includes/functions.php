@@ -9,11 +9,16 @@
  * Used everywhere access is checked, so the site's permission structure
  * stays in one place instead of being hardcoded per-page.
  */
-const CONTENT_ADMIN_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'csd', 'media_head', 'prm'];
+const CONTENT_ADMIN_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'csd', 'media_head', 'prm', 'hod', 'faculty_coordinator'];
 const APTITUDE_ROLES = ['super_admin', 'admin', 'aptitude_manager'];
-const ALL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager', 'member'];
-const ASSIGNABLE_ROLES = ['member', 'joint_coordinator', 'treasurer', 'csd', 'media_head', 'prm', 'secretary', 'president', 'aptitude_manager', 'admin']; // super_admin excluded — promoted separately, never via approval/role-change forms
+const ALL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager', 'hod', 'faculty_coordinator', 'member'];
+const ASSIGNABLE_ROLES = ['member', 'joint_coordinator', 'treasurer', 'csd', 'media_head', 'prm', 'secretary', 'president', 'aptitude_manager', 'admin', 'hod', 'faculty_coordinator']; // super_admin excluded — promoted separately, never via approval/role-change forms
 
+// Read-only access to the Users & Access accounts list + CSV export.
+// Everyone here can VIEW and DOWNLOAD the account roster; none of them
+// (except super_admin, checked separately) can edit roles, suspend,
+// delete, or approve/reject anything on that page.
+const ACCOUNTS_VIEW_ROLES = ['super_admin', 'admin', 'secretary', 'president', 'hod', 'faculty_coordinator'];
 
 /** Human-readable label + badge class for a join request's pipeline stage. */
 function join_status_label($status) {
