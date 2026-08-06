@@ -125,6 +125,10 @@ function status_badge($status) {
 function generate_ticket_id() {
     return 'EESA-' . date('y') . '-' . strtoupper(bin2hex(random_bytes(3)));
 }
+/** Deterministic, human-readable member ID assigned once, at final account approval. */
+function generate_member_id($userId) {
+    return 'EESA-' . date('Y') . '-' . str_pad($userId, 4, '0', STR_PAD_LEFT);
+}
 
 function generate_otp() {
     return (string)random_int(100000, 999999);
