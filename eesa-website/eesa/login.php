@@ -75,6 +75,11 @@ require __DIR__ . '/includes/header.php';
           <div class="field"><label>Password</label><input type="password" name="password" required></div>
           <button class="btn btn-primary" type="submit" name="login" style="width:100%">Sign In</button>
         </form>
+          <div class="field"><label>Password</label><input type="password" name="password" required></div>
+          <p style="margin:-4px 0 4px;text-align:right">
+            <a href="<?= BASE_URL ?>/pages/forgot_password.php" class="mono" style="color:var(--copper-lt);font-size:13px">Forgot password?</a>
+          </p>
+          <button class="btn btn-primary" type="submit" name="login" style="width:100%">Sign In</button>
       </div>
     </div>
   </div>
