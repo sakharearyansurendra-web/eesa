@@ -88,6 +88,11 @@ function require_role(array $roles) {
         redirect('/login.php?denied=1');
     }
 }
+/** Alias used by pages (like admin/user_view.php) that want the same
+ *  read/edit access as the Users & Access roster. */
+function require_admin_login() {
+    require_role(ACCOUNTS_VIEW_ROLES);
+}
 
 function csrf_token() {
     if (empty($_SESSION['csrf'])) {
