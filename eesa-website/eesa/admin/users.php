@@ -97,20 +97,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_user'])) {
             if ($exists->fetch()) {
                 $err = 'That username is already taken.';
             } else {
-                $tempPass = random_password();
-                $pdo->prepare("UPDATE users SET username=?, password_hash=?, role=?, status='approved', approved_at=NOW(), approved_by=? WHERE id=?")
-                    ->execute([$username, password_hash($tempPass, PASSWORD_DEFAULT), $role, current_user()['id'], $id]);
-                $autoSent = mail_approval($target['email'], $target['full_name'], $username, $tempPass);
-                audit($pdo, 'approve_user', "user #$id as $role");
+               $tempPass = random_password();
+                $member_id = $target['member_id'] ?: generate_member_id($id);
+                $pdo->prepare("UPDATE users SET username=?, password_hash=?, role=?, status='approved', approved_at=NOW(), approved_by=?, member_id=? WHERE id=?")
+                    ->execute([$username, password_hash($tempPass, PASSWORD_DEFAULT), $role, current_user()['id'], $member_id, $id]);
+                $autoSent = mail_approval($target['email'], $target['full_name'], $username, $tempPass, $member_id);
+                audit($pdo, 'approve_user', "user #$id as $role (member ID $member_id)");
                 $draft = [
                     'to'      => $target['email'],
                     'subject' => 'Welcome to EESA — Your Login Details',
-                    'body'    => approval_draft_text($target['full_name'], $username, $tempPass),
+                    'body'    => approval_draft_text($target['full_name'], $username, $tempPass, $member_id),
                     'auto_sent' => $autoSent,
                 ];
                 $msg = $autoSent
-                    ? "Approved. Username \"$username\" was generated and an email was sent automatically to " . h($target['email']) . ". A draft is also ready below."
-                    : "Approved. Username \"$username\" was generated, but automatic sending failed — use the draft below to send the credentials yourself.";
+                    ? "Approved. Username \"$username\" and Member ID \"$member_id\" were generated, and an email was sent automatically to " . h($target['email']) . ". A draft is also ready below."
+                    : "Approved. Username \"$username\" and Member ID \"$member_id\" were generated, but automatic sending failed — use the draft below to send the credentials yourself.";
             }
         }
     }
