@@ -13,6 +13,7 @@
 require_once __DIR__ . '/config.php';
 $pageTitle = 'Login';
 $err = null;
+
 // Only bounce an already-logged-in visitor to the dashboard if their stored
 // role is still one we recognize. If it isn't (e.g. a stale session from
 // before a role-list change, or any other mismatch), clear the session and
@@ -27,13 +28,16 @@ if (is_logged_in()) {
         session_regenerate_id(true);
     }
 }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     csrf_check();
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
+
     $stmt = $pdo->prepare('SELECT * FROM users WHERE username = ? LIMIT 1');
     $stmt->execute([$username]);
     $user = $stmt->fetch();
+
     if (!$user || !$user['password_hash'] || !password_verify($password, $user['password_hash'])) {
         $err = 'Invalid username or password.';
     } elseif ($user['status'] !== 'approved') {
@@ -52,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         redirect('/admin/dashboard.php');
     }
 }
+
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="section">
@@ -63,29 +68,45 @@ require __DIR__ . '/includes/header.php';
         <div class="alert alert-err">You don't have access to that page. Sign in with an authorized account.</div>
       <?php endif; ?>
       <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
+
       <div class="form-card">
         <form method="POST" class="stack">
           <?= csrf_field() ?>
+
           <div class="field"><label>Username</label><input name="username" required autofocus></div>
-          <div class="field"><label>Password</label><input type="password" name="password" required></div>
-            
+
+          <div class="field">
+            <label>Password</label>
+            <div style="position:relative">
+              <input type="password" name="password" id="loginPassword" required style="padding-right:44px">
+              <button type="button" id="togglePassword"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--slate-lt);font-size:13px;font-family:var(--font-mono)">
+                Show
+              </button>
+            </div>
+          </div>
+
           <p style="margin:-4px 0 4px;text-align:right">
             <a href="<?= BASE_URL ?>/pages/forgot_password.php" class="mono" style="color:var(--copper-lt);font-size:13px">Forgot password?</a>
           </p>
+
           <button class="btn btn-primary" type="submit" name="login" style="width:100%">Sign In</button>
-            <div class="field">
-  <label>Password</label>
-  <div style="position:relative">
-    <input type="password" name="password" id="loginPassword" required style="padding-right:44px">
-    <button type="button" id="togglePassword"
-      style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--slate-lt);font-size:13px;font-family:var(--font-mono)">
-      Show
-    </button>
-  </div>
-</div>
         </form>
       </div>
     </div>
   </div>
 </section>
+
+<script>
+  const pwInput = document.getElementById('loginPassword');
+  const pwToggle = document.getElementById('togglePassword');
+  if (pwInput && pwToggle) {
+    pwToggle.addEventListener('click', () => {
+      const showing = pwInput.type === 'text';
+      pwInput.type = showing ? 'password' : 'text';
+      pwToggle.textContent = showing ? 'Show' : 'Hide';
+    });
+  }
+</script>
+
 <?php require __DIR__ . '/includes/footer.php'; ?>
