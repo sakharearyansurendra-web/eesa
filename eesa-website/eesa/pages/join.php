@@ -84,6 +84,24 @@ require __DIR__ . '/../includes/header.php';
           </form>
         </div>
       <?php endif; ?>
+<div class="form-card" style="margin-top:24px">
+        <h3>Track Your Request</h3>
+        <p class="muted" style="font-size:13px">Enter the ticket ID you received when you applied to check its status.</p>
+        <form method="GET" class="stack">
+          <div class="field"><label>Ticket ID</label><input name="ticket_id" placeholder="EESA-26-XXXXXX" value="<?= h($_GET['ticket_id'] ?? '') ?>" required></div>
+          <button class="btn btn-outline" type="submit">Check Status</button>
+        </form>
+        <?php if ($trackErr): ?><div class="alert alert-err" style="margin-top:14px"><?= h($trackErr) ?></div><?php endif; ?>
+        <?php if ($trackResult): ?>
+          <?php [$label, $badgeClass] = join_status_label($trackResult['status']); ?>
+          <div class="card" style="margin-top:14px">
+            <p class="muted mono" style="font-size:12px">Ticket: <?= h($trackResult['ticket_id']) ?></p>
+            <h3 style="margin-bottom:4px"><?= h($trackResult['full_name']) ?></h3>
+            <span class="badge <?= h($badgeClass) ?>"><?= h($label) ?></span>
+            <p class="muted" style="font-size:12px;margin-top:8px">Applied <?= h(time_ago($trackResult['created_at'])) ?></p>
+          </div>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
 </section>
