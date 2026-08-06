@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
             $err = 'A request with this email already exists (status: ' . h($row['status']) . ').';
         } else {
             $ticketId = generate_ticket_id();
-            $branchYear = $branch . ', ' . $year; // kept for existing display code
+           $branchYear = mb_substr($branch . ', ' . $year, 0, 120);
             $pdo->prepare("INSERT INTO users (full_name, email, role, status, ticket_id, email_verified, branch, year_of_study, branch_year)
                             VALUES (?, ?, 'member', 'pending', ?, 0, ?, ?, ?)")
                 ->execute([$name, $email, $ticketId, $branch, $year, $branchYear]);
