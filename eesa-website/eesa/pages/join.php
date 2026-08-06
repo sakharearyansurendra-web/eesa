@@ -98,6 +98,8 @@ require __DIR__ . '/../includes/header.php';
     <option>3rd Year</option><option>4th Year</option>
   </select>
 </div>
+<button class="btn btn-primary" type="submit" name="submit_join">Submit Request</button>
+</form>
           </form>
         </div>
       <?php endif; ?>
