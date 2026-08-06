@@ -54,8 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_reset'])) {
 $pending = $pdo->query("SELECT pr.*, u.full_name, u.email FROM password_reset_requests pr
                          JOIN users u ON u.id = pr.user_id
                          WHERE pr.status = 'pending' ORDER BY pr.created_at DESC")->fetchAll();
-$resolved = $pdo->query("SELECT pr.*, u.full_name FROM password_reset_requests pr
+$resolved = $pdo->query("SELECT pr.*, u.full_name, r.full_name AS resolver_name
+                          FROM password_reset_requests pr
                           JOIN users u ON u.id = pr.user_id
+                          LEFT JOIN users r ON r.id = pr.resolved_by
                           WHERE pr.status != 'pending' ORDER BY pr.resolved_at DESC LIMIT 30")->fetchAll();
 
 require __DIR__ . '/layout_header.php';
