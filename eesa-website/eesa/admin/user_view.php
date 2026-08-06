@@ -30,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
 
     // Generate Member ID if needed
     $member_id = $user['member_id'];
-    if (!$member_id && isset($_POST['assign_member_id'])) {
-        $member_id = 'EESA-' . date('Y') . '-' . str_pad($user['id'], 4, '0', STR_PAD_LEFT);
-    }
+if (!$member_id && isset($_POST['assign_member_id'])) {
+    $member_id = generate_member_id($user['id']);
+}
 
     $password_sql = '';
     $params = [$full_name, $email, $username, $personal_email, $phone, $linkedin_url, $github_url, $instagram_url, $position, $year_of_study, $member_id, $reapply_allowed];
