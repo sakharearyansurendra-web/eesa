@@ -71,6 +71,22 @@ function redirect($path) {
 }
 
 function current_user() {
+    global $pdo;
+    if (!isset($_SESSION['user'])) return null;
+
+    // Defend against a stale session referencing a deleted account (e.g.
+    // after a bulk user cleanup) — confirm the id still exists, once per
+    // request, and drop the session if it doesn't.
+    static $checked = false;
+    if (!$checked) {
+        $checked = true;
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$_SESSION['user']['id']]);
+        if (!$stmt->fetch()) {
+            unset($_SESSION['user']);
+            return null;
+        }
+    }
     return $_SESSION['user'] ?? null;
 }
 
@@ -182,10 +198,22 @@ function generate_otp() {
 
 function audit(PDO $pdo, $action, $details = null) {
     $u = current_user();
-    $stmt = $pdo->prepare('INSERT INTO audit_log (user_id, action, details) VALUES (?,?,?)');
-    $stmt->execute([$u['id'] ?? null, $action, $details]);
+    $userId = $u['id'] ?? null;
+    try {
+        $stmt = $pdo->prepare('INSERT INTO audit_log (user_id, action, details) VALUES (?,?,?)');
+        $stmt->execute([$userId, $action, $details]);
+    } catch (PDOException $e) {
+        // Stale session referencing a user that's since been deleted
+        // (e.g. after a bulk account cleanup) — log the action without
+        // the dangling reference instead of taking the whole page down.
+        if ((int)$e->getCode() === 23000) {
+            $stmt = $pdo->prepare('INSERT INTO audit_log (user_id, action, details) VALUES (NULL,?,?)');
+            $stmt->execute([$action, $details]);
+        } else {
+            throw $e;
+        }
+    }
 }
-
 /** Save an uploaded image safely into /uploads/<subdir>/, return filename or null. */
 function save_upload($field, $subdir, array $allowed = ['jpg','jpeg','png','webp']) {
     if (empty($_FILES[$field]['tmp_name']) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) return null;
