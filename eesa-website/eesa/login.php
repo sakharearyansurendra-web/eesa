@@ -68,10 +68,21 @@ require __DIR__ . '/includes/header.php';
           <?= csrf_field() ?>
           <div class="field"><label>Username</label><input name="username" required autofocus></div>
           <div class="field"><label>Password</label><input type="password" name="password" required></div>
+            
           <p style="margin:-4px 0 4px;text-align:right">
             <a href="<?= BASE_URL ?>/pages/forgot_password.php" class="mono" style="color:var(--copper-lt);font-size:13px">Forgot password?</a>
           </p>
           <button class="btn btn-primary" type="submit" name="login" style="width:100%">Sign In</button>
+            <div class="field">
+  <label>Password</label>
+  <div style="position:relative">
+    <input type="password" name="password" id="loginPassword" required style="padding-right:44px">
+    <button type="button" id="togglePassword"
+      style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--slate-lt);font-size:13px;font-family:var(--font-mono)">
+      Show
+    </button>
+  </div>
+</div>
         </form>
       </div>
     </div>
