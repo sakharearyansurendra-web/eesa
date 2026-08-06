@@ -2,16 +2,19 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/mailer.php';
 // Secretary and President get limited access to this page (their own
-// verification queue only); everything else on this page (role changes,
-// deletions, final account creation) stays super_admin only, enforced
-// per-action below, not just at the page level.
-require_role(['super_admin', 'secretary', 'president']);
+// verification queue only, plus read-only accounts view below); Admin,
+// HOD, and Faculty Coordinator get read-only accounts view + CSV download
+// only. Everything else on this page (role changes, suspensions,
+// deletions, approvals) stays super_admin only, enforced per-action below,
+// not just at the page level.
+require_role(ACCOUNTS_VIEW_ROLES);
 $pageTitle = 'User Access Management';
 $activeSection = 'users';
 $msg = null; $err = null;
 $isSuperAdmin = has_role(['super_admin']);
 $isSecretary = has_role(['secretary']);
 $isPresident = has_role(['president']);
+$canViewAccounts = has_role(ACCOUNTS_VIEW_ROLES);
 
 function random_password() {
     return substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'), 0, 10);
@@ -187,17 +190,21 @@ $stage2Queue = ($isPresident || $isSuperAdmin)
 if ($stage2Queue) { $stage2Queue->execute(['verifier1_approved']); $stage2Queue = $stage2Queue->fetchAll(); } else { $stage2Queue = []; }
 
 $finalQueue = [];
-$approved = [];
 if ($isSuperAdmin) {
     $finalQueue = $pdo->prepare("SELECT * FROM users WHERE status = ? ORDER BY created_at DESC");
     $finalQueue->execute(['verifier2_approved']);
     $finalQueue = $finalQueue->fetchAll();
+}
 
+// Approved/suspended accounts list — everyone in ACCOUNTS_VIEW_ROLES can see
+// and download this; only super_admin gets the editable version below it.
+$approved = [];
+if ($canViewAccounts) {
     $approved = $pdo->query("SELECT * FROM users WHERE status IN ('approved','suspended') ORDER BY role, full_name")->fetchAll();
 }
 
-// ---- CSV export of all accounts (super_admin only) — opens cleanly in Excel ----
-if ($isSuperAdmin && isset($_GET['export']) && $_GET['export'] === 'csv') {
+// ---- CSV export of all accounts — view + download, same roles as the table ----
+if ($canViewAccounts && isset($_GET['export']) && $_GET['export'] === 'csv') {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="eesa-accounts-' . date('Y-m-d') . '.csv"');
     $out = fopen('php://output', 'w');
@@ -338,11 +345,15 @@ require __DIR__ . '/layout_header.php';
     </div>
   </div>
 <?php endforeach; ?>
+<?php endif; ?>
 
+<?php if ($canViewAccounts): ?>
 <div class="section-head" style="margin-top:32px;margin-bottom:0">
   <h2 style="margin:0">All Accounts</h2>
   <a class="btn btn-outline btn-sm" href="?export=csv">Download as Excel (CSV)</a>
 </div>
+
+<?php if ($isSuperAdmin): ?>
 <table class="admin-table">
   <tr><th>Name</th><th>Username</th><th>Member ID</th><th>Role</th><th>Status</th><th>Actions</th></tr>
   <?php foreach ($approved as $a): ?>
@@ -391,6 +402,23 @@ require __DIR__ . '/layout_header.php';
     </tr>
   <?php endforeach; ?>
 </table>
+
+<?php else: ?>
+<!-- Read-only accounts table: view + download, no edit controls — used by
+     admin, hod, faculty_coordinator, secretary, president. -->
+<table class="admin-table">
+  <tr><th>Name</th><th>Username</th><th>Member ID</th><th>Role</th><th>Status</th></tr>
+  <?php foreach ($approved as $a): ?>
+    <tr>
+      <td><?= h($a['full_name']) ?><br><span class="muted mono" style="font-size:12px"><?= h($a['email']) ?></span></td>
+      <td class="mono"><?= h($a['username']) ?></td>
+      <td class="mono"><?= h($a['member_id'] ?: '—') ?></td>
+      <td><?= h(role_label($a['role'])) ?></td>
+      <td><span class="pill pill-<?= h($a['status']) ?>"><?= h($a['status']) ?></span></td>
+    </tr>
+  <?php endforeach; ?>
+</table>
+<?php endif; ?>
 <?php endif; ?>
 
 <?php require __DIR__ . '/layout_footer.php'; ?>
