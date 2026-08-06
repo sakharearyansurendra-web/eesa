@@ -17,12 +17,14 @@ function random_password() {
     return substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'), 0, 10);
 }
 
-function approval_draft_text($fullName, $username, $tempPass) {
+function approval_draft_text($fullName, $username, $tempPass, $memberId = null) {
+    $memberLine = $memberId ? "Member ID: $memberId\n" : '';
     return "Hi $fullName,\n\n"
          . "Your EESA account has been approved. Here are your login details:\n\n"
          . "Username: $username\n"
-         . "Temporary Password: $tempPass\n\n"
-         . "Please log in and change your password as soon as possible.\n\n"
+         . "Temporary Password: $tempPass\n"
+         . $memberLine . "\n"
+         . "Please log in to https://eesa-i2c5.onrender.com/ and change your password as soon as possible.\n\n"
          . "— EESA Team";
 }
 
