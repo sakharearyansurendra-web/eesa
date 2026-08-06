@@ -76,12 +76,19 @@ try {
         $pdoOptions[PDO::MYSQL_ATTR_SSL_CA] = DB_SSL_CA;
         $pdoOptions[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = DB_SSL_VERIFY;
     }
-    $pdo = new PDO(
+$pdo = new PDO(
         "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4",
         DB_USER,
         DB_PASS,
         $pdoOptions
     );
+    // Force this connection's session timezone to IST too, so MySQL's
+    // NOW()/CURRENT_TIMESTAMP agree with PHP's date_default_timezone_set()
+    // above — otherwise created_at/approved_at/audit_log timestamps can be
+    // off by the host's UTC offset even though everything displayed on the
+    // site claims to be IST. Using a fixed offset instead of 'Asia/Kolkata'
+    // since not every MySQL host has the named-timezone tables loaded.
+    $pdo->exec("SET time_zone = '+05:30'");
 } catch (Exception $e) {
     http_response_code(500);
     $certInfo = DB_SSL_CA !== ''
