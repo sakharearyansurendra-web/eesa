@@ -11,8 +11,8 @@
  */
 const CONTENT_ADMIN_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'csd', 'media_head', 'prm', 'hod', 'faculty_coordinator'];
 const APTITUDE_ROLES = ['super_admin', 'admin', 'aptitude_manager'];
-const ALL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager', 'hod', 'faculty_coordinator', 'member'];
-const ASSIGNABLE_ROLES = ['member', 'joint_coordinator', 'treasurer', 'csd', 'media_head', 'prm', 'secretary', 'president', 'aptitude_manager', 'admin', 'hod', 'faculty_coordinator']; // super_admin excluded — promoted separately, never via approval/role-change forms
+const ALL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager', 'hod', 'faculty_coordinator', 'member', 'alumni'];
+const ASSIGNABLE_ROLES = ['member', 'alumni', 'joint_coordinator', 'treasurer', 'csd', 'media_head', 'prm', 'secretary', 'president', 'aptitude_manager', 'admin', 'hod', 'faculty_coordinator']; // super_admin excluded — promoted separately, never via approval/role-change forms
 
 // Read-only access to the Users & Access accounts list + CSV export.
 // Everyone here can VIEW and DOWNLOAD the account roster; none of them
@@ -48,6 +48,7 @@ function role_label($role) {
         'hod'                  => 'Head of Department',
         'faculty_coordinator'  => 'Faculty Coordinator',
         'member'               => 'Member',
+        'alumni'               => 'Alumni',
     ];
     return $labels[$role] ?? $role;
 }
