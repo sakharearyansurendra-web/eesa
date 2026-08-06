@@ -73,10 +73,32 @@ require __DIR__ . '/../includes/header.php';
         <div class="form-card">
           <form method="POST" class="stack">
             <?= csrf_field() ?>
-            <div class="field"><label>Full Name</label><input name="full_name" required></div>
-            <div class="field"><label>Email</label><input type="email" name="email" required></div>
-            <div class="field"><label>Branch &amp; Year</label><input name="branch_year" placeholder="e.g. EE, 2nd Year" required></div>
-            <button class="btn btn-primary" type="submit" name="submit_join">Submit Request</button>
+<div class="field"><label>Full Name</label><input name="full_name" required></div>
+<div class="field"><label>Email</label><input type="email" name="email" required></div>
+<div class="field">
+  <label>Branch</label>
+  <select name="branch" required>
+    <option value="">Select branch</option>
+    <option>Electrical Engineering</option>
+    <option>Electronic &amp; Telecommunication Engineering</option>
+     <option>Information Technology</option>
+      <option>Textile Technology</option>
+      <option>Production Engineering</option>
+    <option>Computer Science &amp; Engineering</option>
+    <option>Mechanical Engineering</option>
+    <option>Civil Engineering</option>
+    <option>Chemical Engineering</option>
+    <option>Instrumentation Engineering</option>
+  </select>
+</div>
+<div class="field">
+  <label>Year of Study</label>
+  <select name="year_of_study" required>
+    <option value="">Select year</option>
+    <option>1st Year</option><option>2nd Year</option>
+    <option>3rd Year</option><option>4th Year</option>
+  </select>
+</div>
           </form>
         </div>
       <?php endif; ?>
