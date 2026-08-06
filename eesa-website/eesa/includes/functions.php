@@ -139,8 +139,41 @@ function generate_ticket_id() {
     return 'EESA-' . date('y') . '-' . strtoupper(bin2hex(random_bytes(3)));
 }
 /** Deterministic, human-readable member ID assigned once, at final account approval. */
+/**
+ * Member ID format: EESA-<startYY>-<endYY>-<CODE>
+ *   startYY/endYY = the two years of the academic term the ID was
+ *   generated in (term assumed to start in June/July, IST) — e.g. an
+ *   approval in Aug 2026 -> "26-27"; one in March 2027 (still same
+ *   session) -> also "26-27"; one in July 2027 -> "27-28".
+ *   CODE = 5 random alphanumeric characters (not sequential), so IDs
+ *   don't reveal approval order or headcount.
+ */
 function generate_member_id($userId) {
-    return 'EESA-' . date('Y') . '-' . str_pad($userId, 4, '0', STR_PAD_LEFT);
+    global $pdo;
+
+    $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+    $y = (int)$now->format('Y');
+    $m = (int)$now->format('n');
+    // Academic term starts in June (month 6). Before that, we're still
+    // in the term that started the previous June.
+    $startY = $m >= 6 ? $y : $y - 1;
+    $endY = $startY + 1;
+    $termPart = substr((string)$startY, 2, 2) . '-' . substr((string)$endY, 2, 2);
+
+    // Unambiguous alphanumeric set — no 0/O or 1/I confusion.
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+    do {
+        $code = '';
+        for ($i = 0; $i < 5; $i++) {
+            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $candidate = "EESA-$termPart-$code";
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE member_id = ? LIMIT 1');
+        $stmt->execute([$candidate]);
+    } while ($stmt->fetch()); // extremely unlikely, but guarantees uniqueness
+
+    return $candidate;
 }
 
 function generate_otp() {
