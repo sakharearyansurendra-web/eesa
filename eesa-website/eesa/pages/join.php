@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
         }
     }
 }
-}
 $trackResult = null; $trackErr = null;
 if (isset($_GET['ticket_id']) && trim($_GET['ticket_id']) !== '') {
     $tid = trim($_GET['ticket_id']);
