@@ -35,17 +35,19 @@ function join_status_label($status) {
 
 function role_label($role) {
     $labels = [
-        'super_admin'       => 'Super Admin',
-        'admin'             => 'Admin',
-        'president'         => 'President',
-        'secretary'         => 'Secretary',
-        'treasurer'         => 'Treasurer',
-        'csd'               => 'Club Service Director',
-        'media_head'        => 'Media Head',
-        'prm'               => 'Public Relations Manager',
-        'joint_coordinator' => 'Joint Coordinator',
-        'aptitude_manager'  => 'Aptitude Manager',
-        'member'            => 'Member',
+        'super_admin'         => 'Super Admin',
+        'admin'                => 'Admin',
+        'president'            => 'President',
+        'secretary'            => 'Secretary',
+        'treasurer'            => 'Treasurer',
+        'csd'                  => 'Club Service Director',
+        'media_head'           => 'Media Head',
+        'prm'                  => 'Public Relations Manager',
+        'joint_coordinator'    => 'Joint Coordinator',
+        'aptitude_manager'     => 'Aptitude Manager',
+        'hod'                  => 'Head of Department',
+        'faculty_coordinator'  => 'Faculty Coordinator',
+        'member'               => 'Member',
     ];
     return $labels[$role] ?? $role;
 }
