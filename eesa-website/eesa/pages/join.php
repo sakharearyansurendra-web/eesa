@@ -16,9 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
     csrf_check();
     $name = trim($_POST['full_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
-    $branch = trim($_POST['branch_year'] ?? '');
+    $branch = trim($_POST['branch'] ?? '');
+    $year = trim($_POST['year_of_study'] ?? '');
 
-    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$branch) {
+    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$branch || !$year) {
         $err = 'Please fill all fields with a valid email.';
     } else {
         $existing = $pdo->prepare('SELECT status FROM users WHERE email = ? LIMIT 1');
@@ -28,23 +29,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
             $err = 'A request with this email already exists (status: ' . h($row['status']) . ').';
         } else {
             $ticketId = generate_ticket_id();
-            $pdo->prepare("INSERT INTO users (full_name, email, role, status, ticket_id, email_verified, branch_year)
-                            VALUES (?, ?, 'member', 'pending', ?, 0, ?)")
-                ->execute([$name, $email, $ticketId, $branch]);
+            $branchYear = $branch . ', ' . $year; // kept for existing display code
+            $pdo->prepare("INSERT INTO users (full_name, email, role, status, ticket_id, email_verified, branch, year_of_study, branch_year)
+                            VALUES (?, ?, 'member', 'pending', ?, 0, ?, ?, ?)")
+                ->execute([$name, $email, $ticketId, $branch, $year, $branchYear]);
             $sent = mail_join_ticket($email, $name, $ticketId);
             audit($pdo, 'join_request', "$email ($ticketId)");
-            if (!$sent) {
-                // The request is saved either way — admins can still see and
-                // approve it from /admin/users.php — but let the applicant
-                // know the confirmation email itself may not have landed.
-                $msg = "Request submitted! Your ticket ID is $ticketId — save it for reference. "
-                     . "We couldn't confirm the email sent, so if you don't hear back, contact " . CONTACT_EMAIL_EESA . ".";
-            } else {
-                $msg = "Request submitted! Your ticket ID is $ticketId — we've also emailed it to you. "
-                     . "An admin will review your request; once approved, your username and password will be emailed to you.";
-            }
+            $msg = $sent
+                ? "Request submitted! Your ticket ID is $ticketId — we've also emailed it to you. An admin will review your request; once approved, your username and password will be emailed to you."
+                : "Request submitted! Your ticket ID is $ticketId — save it for reference. We couldn't confirm the email sent, so if you don't hear back, contact " . CONTACT_EMAIL_EESA . ".";
         }
     }
+}
 }
 $trackResult = null; $trackErr = null;
 if (isset($_GET['ticket_id']) && trim($_GET['ticket_id']) !== '') {
