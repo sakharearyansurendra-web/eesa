@@ -201,8 +201,6 @@ require __DIR__ . '/layout_header.php';
     <button class="btn btn-primary" type="submit" name="issue_cert">Issue Certificate</button>
   </form>
 </div>
-
-<h2 style="margin-top:32px">All Certificates</h2>
 <div class="card form-card" style="max-width:560px;margin-top:24px">
   <h3>Bulk Upload Certificates (CSV)</h3>
   <p class="muted" style="font-size:13px">
@@ -224,6 +222,8 @@ require __DIR__ . '/layout_header.php';
     <button class="btn btn-primary" type="submit" name="bulk_upload_certs" style="margin-top:14px">Upload &amp; Issue Certificates</button>
   </form>
 </div>
+<h2 style="margin-top:32px">All Certificates</h2>
+
 <!-- Search & filter bar -->
 <form method="GET" class="card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
   <div class="field" style="margin-bottom:0;flex:1;min-width:220px">
