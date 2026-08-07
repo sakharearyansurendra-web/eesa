@@ -20,24 +20,13 @@ require __DIR__ . '/includes/header.php';
 ?>
 
 <section class="hero">
-  <div class="container hero-grid">
-    <div>
-      <div class="eyebrow"><?= h($heroEyebrow) ?></div>
-      <h1><?= h($heroTitle) ?></h1>
-      <p class="lead"><?= h($heroLead) ?></p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
-        <a href="<?= BASE_URL ?>/pages/activities.php" class="btn btn-primary">Explore Activities</a>
-        <a href="<?= BASE_URL ?>/pages/join.php" class="btn btn-outline">Join EESA</a>
-      </div>
-    </div>
-    <div class="hero-visual">
-      <svg width="70%" viewBox="0 0 200 200" fill="none">
-        <circle cx="100" cy="100" r="60" stroke="#35d4e8" stroke-opacity="0.5" stroke-width="1.5"/>
-        <circle cx="100" cy="100" r="4" fill="#35d4e8"/>
-        <path d="M100 40V4M100 160v36M40 100H4M160 100h36" stroke="#35d4e8" stroke-opacity="0.5" stroke-width="1.5"/>
-        <circle cx="100" cy="4" r="3" fill="#35d4e8"/><circle cx="100" cy="196" r="3" fill="#35d4e8"/>
-        <circle cx="4" cy="100" r="3" fill="#35d4e8"/><circle cx="196" cy="100" r="3" fill="#35d4e8"/>
-      </svg>
+  <div class="container">
+    <div class="eyebrow"><?= h($heroEyebrow) ?></div>
+    <h1><?= h($heroTitle) ?></h1>
+    <p class="lead"><?= h($heroLead) ?></p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
+      <a href="<?= BASE_URL ?>/pages/activities.php" class="btn btn-primary">Explore Activities</a>
+      <a href="<?= BASE_URL ?>/pages/join.php" class="btn btn-outline">Join EESA</a>
     </div>
   </div>
 </section>
