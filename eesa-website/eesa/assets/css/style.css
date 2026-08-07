@@ -262,3 +262,9 @@ table.admin-table th{ font-family:var(--font-mono); font-size:12px; text-transfo
 .pill-rejected, .pill-suspended{ background:rgba(217,96,90,0.14); color:var(--danger); }
 
 @media (max-width:800px){ .admin-shell{ grid-template-columns:1fr; } .admin-side{ display:flex; overflow-x:auto; border-right:none; border-bottom:1px solid var(--line); } .admin-side a{ white-space:nowrap; } }
+.date-field{ position:relative; }
+.date-field input[type="date"], .date-field input[type="datetime-local"]{ padding-right:38px; }
+.date-field-icon{
+  position:absolute; right:10px; top:50%; transform:translateY(-50%);
+  color:var(--copper-lt); cursor:pointer; display:flex; pointer-events:auto;
+}
