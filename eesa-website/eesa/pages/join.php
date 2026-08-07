@@ -5,13 +5,6 @@ $pageTitle = 'Join EESA';
 
 $err = null; $msg = null; $ticketId = null;
 
-// Single-step request: no OTP. The person submits their details, we create
-// a pending account and email them a ticket ID right away for reference.
-// Nothing is auto-approved — an admin reviews the request in
-// /admin/users.php and, on approval, the system generates a username +
-// temporary password and emails those credentials (see mail_approval() in
-// includes/mailer.php). Account creation only ever happens through that
-// admin approval step, never automatically.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
     csrf_check();
     $name = trim($_POST['full_name'] ?? '');
@@ -29,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
             $err = 'A request with this email already exists (status: ' . h($row['status']) . ').';
         } else {
             $ticketId = generate_ticket_id();
-           $branchYear = mb_substr($branch . ', ' . $year, 0, 120);
+            $branchYear = mb_substr($branch . ', ' . $year, 0, 120);
             $pdo->prepare("INSERT INTO users (full_name, email, role, status, ticket_id, email_verified, branch, year_of_study, branch_year)
                             VALUES (?, ?, 'member', 'pending', ?, 0, ?, ?, ?)")
                 ->execute([$name, $email, $ticketId, $branch, $year, $branchYear]);
@@ -41,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
         }
     }
 }
+
 $trackResult = null; $trackErr = null;
 if (isset($_GET['ticket_id']) && trim($_GET['ticket_id']) !== '') {
     $tid = trim($_GET['ticket_id']);
@@ -53,74 +47,62 @@ require __DIR__ . '/../includes/header.php';
 ?>
 <section class="section">
   <div class="container">
-    <div style="max-width:520px;margin:0 auto">
-      <div class="eyebrow">Become a member</div>
-      <h1>Join EESA</h1>
-      <p class="muted">Submit your details below. An admin will review your request — once approved, you'll receive
-      your username and password by email, ready to sign in at the same login page as everyone else.</p>
-
-      <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
-      <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
+    <div class="neon-wrapper">
 
       <?php if ($ticketId): ?>
-        <div class="form-card">
-          <h3>Your Ticket ID</h3>
-          <p class="mono" style="font-size:22px;color:var(--copper-lt)"><?= h($ticketId) ?></p>
-          <p class="muted">Keep this for reference in case you need to follow up.</p>
-        </div>
-      <?php else: ?>
-        <div class="form-card">
-          <form method="POST" class="stack">
-            <?= csrf_field() ?>
-<div class="field"><label>Full Name</label><input name="full_name" required></div>
-<div class="field"><label>Email</label><input type="email" name="email" required></div>
-<div class="field">
-  <label>Branch</label>
-  <select name="branch" required>
-    <option value="">Select branch</option>
-    <option>Electrical Engineering</option>
-    <option>Electronic &amp; Telecommunication Engineering</option>
-     <option>Information Technology</option>
-      <option>Textile Technology</option>
-      <option>Production Engineering</option>
-    <option>Computer Science &amp; Engineering</option>
-    <option>Mechanical Engineering</option>
-    <option>Civil Engineering</option>
-    <option>Chemical Engineering</option>
-    <option>Instrumentation Engineering</option>
-  </select>
-</div>
-<div class="field">
-  <label>Year of Study</label>
-  <select name="year_of_study" required>
-    <option value="">Select year</option>
-    <option>1st Year</option><option>2nd Year</option>
-    <option>3rd Year</option><option>4th Year</option>
-  </select>
-</div>
-<button class="btn btn-primary" type="submit" name="submit_join">Submit Request</button>
-</form>
-          </form>
-        </div>
-      <?php endif; ?>
-<div class="form-card" style="margin-top:24px">
-        <h3>Track Your Request</h3>
-        <p class="muted" style="font-size:13px">Enter the ticket ID you received when you applied to check its status.</p>
-        <form method="GET" class="stack">
-          <div class="field"><label>Ticket ID</label><input name="ticket_id" placeholder="EESA-26-XXXXXX" value="<?= h($_GET['ticket_id'] ?? '') ?>" required></div>
-          <button class="btn btn-outline" type="submit">Check Status</button>
+        <form class="form">
+          <p class="title">Request Submitted</p>
+          <p class="message">Keep this ticket ID safe — you'll need it to track your request below.</p>
+          <p class="mono" style="font-size:22px;color:var(--copper-lt);text-align:center;margin:8px 0"><?= h($ticketId) ?></p>
         </form>
-        <?php if ($trackErr): ?><div class="alert alert-err" style="margin-top:14px"><?= h($trackErr) ?></div><?php endif; ?>
+      <?php else: ?>
+        <form class="form" method="POST">
+          <p class="title">Join EESA</p>
+          <p class="message">Submit your details — an admin will review your request and email your login credentials once approved.</p>
+          <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
+          <?= csrf_field() ?>
+          <label>
+            <input class="input" type="text" name="full_name" placeholder=" " required value="<?= h($_POST['full_name'] ?? '') ?>">
+            <span>Full Name</span>
+          </label>
+          <label>
+            <input class="input" type="email" name="email" placeholder=" " required value="<?= h($_POST['email'] ?? '') ?>">
+            <span>Email</span>
+          </label>
+          <div class="flex">
+            <label style="flex:1">
+              <input class="input" type="text" name="branch" placeholder=" " required value="<?= h($_POST['branch'] ?? '') ?>">
+              <span>Branch</span>
+            </label>
+            <label style="flex:1">
+              <input class="input" type="text" name="year_of_study" placeholder=" " required value="<?= h($_POST['year_of_study'] ?? '') ?>">
+              <span>Year</span>
+            </label>
+          </div>
+          <button class="submit" type="submit" name="submit_join">Submit Request</button>
+        </form>
+      <?php endif; ?>
+
+      <form class="form" method="GET">
+        <p class="title">Track Request</p>
+        <p class="message">Already applied? Enter your ticket ID to check its status.</p>
+        <?php if ($trackErr): ?><div class="alert alert-err"><?= h($trackErr) ?></div><?php endif; ?>
+        <label>
+          <input class="input" type="text" name="ticket_id" placeholder=" " required value="<?= h($_GET['ticket_id'] ?? '') ?>">
+          <span>Ticket ID</span>
+        </label>
+        <button class="submit" type="submit">Check Status</button>
+
         <?php if ($trackResult): ?>
           <?php [$label, $badgeClass] = join_status_label($trackResult['status']); ?>
-          <div class="card" style="margin-top:14px">
-            <p class="muted mono" style="font-size:12px">Ticket: <?= h($trackResult['ticket_id']) ?></p>
-            <h3 style="margin-bottom:4px"><?= h($trackResult['full_name']) ?></h3>
+          <div style="margin-top:6px;padding:14px;border-radius:10px;background:#2b2b2b;border:1px solid rgba(105,105,105,0.4)">
+            <p style="margin:0 0 4px;font-weight:600"><?= h($trackResult['full_name']) ?></p>
+            <p style="margin:0 0 4px" class="muted mono" style="font-size:12px">Ticket: <?= h($trackResult['ticket_id']) ?></p>
             <span class="badge <?= h($badgeClass) ?>"><?= h($label) ?></span>
-            <p class="muted" style="font-size:12px;margin-top:8px">Applied <?= h(time_ago($trackResult['created_at'])) ?></p>
           </div>
         <?php endif; ?>
-      </div>
+      </form>
+
     </div>
   </div>
 </section>
