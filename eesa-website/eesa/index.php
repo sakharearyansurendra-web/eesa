@@ -5,7 +5,15 @@ $pageTitle = 'Home';
 $announcements = $pdo->query(
     'SELECT * FROM announcements ORDER BY COALESCE(event_datetime, created_at) DESC LIMIT 3'
 )->fetchAll();
+$slidePhotos = $pdo->query(
+    'SELECT gp.filename, ge.event_name FROM gallery_photos gp
+     JOIN gallery_events ge ON ge.id = gp.gallery_event_id
+     ORDER BY gp.id DESC LIMIT 10'
+)->fetchAll();
 
+$featuredProjects = $pdo->query(
+    "SELECT * FROM projects WHERE featured_home = 1 ORDER BY created_at DESC LIMIT 3"
+)->fetchAll();
 $activities = $pdo->query(
     'SELECT a.*, c.label AS cat_label FROM activities a
      JOIN activity_categories c ON c.id = a.category_id
