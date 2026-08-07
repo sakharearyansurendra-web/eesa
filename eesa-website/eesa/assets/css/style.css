@@ -379,3 +379,19 @@ table.admin-table th{ font-family:var(--font-mono); font-size:12px; text-transfo
 }
 .form .submit:hover{ background-color:var(--copper-lt); }
 @keyframes neonPulse{ from{ transform:scale(0.9); opacity:1; } to{ transform:scale(1.8); opacity:0; } }
+
+/* ---------- Join form: select + checkbox styling ---------- */
+.form label select.input{
+  -webkit-appearance:none; appearance:none; cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2300bfff' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center; padding-right:30px;
+}
+.form label select.input:disabled{ opacity:0.4; cursor:not-allowed; }
+.checkbox-row{ display:flex; gap:18px; flex-wrap:wrap; margin:2px 0; }
+.checkbox-row label{
+  display:flex; align-items:center; gap:7px; font-size:13.5px; color:rgba(255,255,255,0.75);
+  cursor:pointer; padding:0;
+}
+.checkbox-row input[type="checkbox"]{
+  width:16px; height:16px; accent-color:#00bfff; cursor:pointer; margin:0;
+}
