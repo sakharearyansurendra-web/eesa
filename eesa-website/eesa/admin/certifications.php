@@ -29,6 +29,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['issue_cert'])) {
         $msg = "Certificate issued: $certNo";
     }
 }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_upload_certs'])) {
+    csrf_check();
+    if (empty($_FILES['certs_csv']['tmp_name'])) {
+        $err = 'Choose a CSV file.';
+    } else {
+        $fh = fopen($_FILES['certs_csv']['tmp_name'], 'r');
+        $row = 0; $issued = 0; $skipped = 0; $skippedRows = [];
+        while (($cols = fgetcsv($fh)) !== false) {
+            $row++;
+            if ($row === 1 && stripos($cols[0], 'member') !== false) continue; // optional header
+            [$memberId, $title, $issuedBy, $issueDate] = array_map('trim', array_pad($cols, 4, ''));
+            if (!$memberId || !$title) { $skipped++; $skippedRows[] = "Row $row (missing data)"; continue; }
+
+            $u = $pdo->prepare('SELECT id, full_name FROM users WHERE member_id = ? LIMIT 1');
+            $u->execute([$memberId]);
+            $target = $u->fetch();
+            if (!$target) { $skipped++; $skippedRows[] = "Row $row (member ID $memberId not found)"; continue; }
+
+            $certNo = generate_certificate_no();
+            $pdo->prepare('INSERT INTO certificates (certificate_no, user_id, member_id, full_name, title, issued_by, issue_date, created_by)
+                            VALUES (?,?,?,?,?,?,?,?)')
+                ->execute([$certNo, $target['id'], $memberId, $target['full_name'], $title, $issuedBy ?: 'EESA', $issueDate ?: date('Y-m-d'), current_user()['id']]);
+            $issued++;
+        }
+        fclose($fh);
+        audit($pdo, 'bulk_issue_certificates', "issued:$issued skipped:$skipped");
+        $msg = "Bulk upload processed — issued $issued certificate(s)"
+             . ($skipped ? ", skipped $skipped (" . implode('; ', array_slice($skippedRows, 0, 5)) . (count($skippedRows) > 5 ? '…' : '') . ")" : '.');
+    }
+}
 
 // ---- Single-row toggle (active <-> revoked) — status is read fresh, so no
 // hidden field is needed; a click always flips whatever the row's current
