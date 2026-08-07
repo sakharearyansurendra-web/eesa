@@ -184,7 +184,7 @@ require __DIR__ . '/layout_header.php';
 
 <div class="card form-card" style="max-width:560px">
   <h3>Issue a Certificate</h3>
-  <p class="muted" style="font-size:13px">Certificate No. is generated automatically. Only members with a Member ID already assigned can be selected.</p>
+  <p class="muted" style="font-size:13px">Only members with a Member ID already assigned can be selected.</p>
   <form method="POST" class="stack">
     <?= csrf_field() ?>
     <div class="field"><label>Member</label>
