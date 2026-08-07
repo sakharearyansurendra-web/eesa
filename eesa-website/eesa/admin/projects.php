@@ -130,6 +130,22 @@ require __DIR__ . '/layout_header.php';
   <div class="card" style="margin-bottom:18px">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+  <?php if ($p['featured_home']): ?>
+    <span class="badge badge-upcoming" style="align-self:center">On Homepage</span>
+  <?php endif; ?>
+  <form method="POST"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$p['id'] ?>"><input type="hidden" name="direction" value="up">
+    <button class="btn btn-outline btn-sm" type="submit" name="move_project">&uarr;</button></form>
+  <form method="POST"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$p['id'] ?>"><input type="hidden" name="direction" value="down">
+    <button class="btn btn-outline btn-sm" type="submit" name="move_project">&darr;</button></form>
+  <form method="POST"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+    <button class="btn btn-outline btn-sm" type="submit" name="toggle_featured"><?= $p['featured_home'] ? 'Unfeature' : 'Feature on Home' ?></button></form>
+  <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/pages/project_view.php?slug=<?= h($p['slug']) ?>" target="_blank">View</a>
+  <form method="POST" onsubmit="return confirm('Delete this project?')">
+    <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+    <button class="btn btn-danger btn-sm" type="submit" name="delete_project">Delete</button>
+  </form>
+</div>
         <h3><?= h($p['title']) ?> <span class="badge badge-<?= $p['status']==='completed'?'completed':'ongoing' ?>"><?= h(ucfirst($p['status'])) ?></span></h3>
         <p class="muted mono" style="font-size:12px">/<?= h($p['slug']) ?></p>
       </div>
