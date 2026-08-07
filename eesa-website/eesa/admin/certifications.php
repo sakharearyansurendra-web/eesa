@@ -30,17 +30,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['issue_cert'])) {
     }
 }
 
+// ---- Single-row toggle (active <-> revoked) — status is read fresh, so no
+// hidden field is needed; a click always flips whatever the row's current
+// status actually is. ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_revoke'])) {
     csrf_check();
-    $id = (int)$_POST['id'];
-    $newStatus = $_POST['new_status'] === 'active' ? 'active' : 'revoked';
-    $pdo->prepare('UPDATE certificates SET status=? WHERE id=?')->execute([$newStatus, $id]);
-    audit($pdo, 'toggle_certificate_status', "#$id -> $newStatus");
-    $msg = 'Status updated.';
+    $id = (int)$_POST['toggle_revoke'];
+    $cur = $pdo->prepare('SELECT status FROM certificates WHERE id=?');
+    $cur->execute([$id]);
+    $curStatus = $cur->fetchColumn();
+    if ($curStatus !== false) {
+        $newStatus = $curStatus === 'active' ? 'revoked' : 'active';
+        $pdo->prepare('UPDATE certificates SET status=? WHERE id=?')->execute([$newStatus, $id]);
+        audit($pdo, 'toggle_certificate_status', "#$id -> $newStatus");
+        $msg = 'Status updated.';
+    }
 }
 
-$certs = $pdo->query('SELECT * FROM certificates ORDER BY created_at DESC')->fetchAll();
+// ---- Single-row delete ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_cert'])) {
+    csrf_check();
+    $id = (int)$_POST['delete_cert'];
+    $stmt = $pdo->prepare('SELECT certificate_no FROM certificates WHERE id=?');
+    $stmt->execute([$id]);
+    $certNo = $stmt->fetchColumn();
+    $pdo->prepare('DELETE FROM certificates WHERE id=?')->execute([$id]);
+    audit($pdo, 'delete_certificate', $certNo ?: "#$id");
+    $msg = 'Certificate deleted.';
+}
+
+// ---- Bulk actions: activate / revoke / delete a checked set ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply_bulk'])) {
+    csrf_check();
+    $ids = array_values(array_filter(array_map('intval', $_POST['cert_ids'] ?? [])));
+    $action = $_POST['bulk_action'] ?? '';
+
+    if (!$ids) {
+        $err = 'Select at least one certificate first.';
+    } elseif (!in_array($action, ['activate', 'revoke', 'delete'], true)) {
+        $err = 'Choose a bulk action.';
+    } else {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        if ($action === 'delete') {
+            $pdo->prepare("DELETE FROM certificates WHERE id IN ($placeholders)")->execute($ids);
+            audit($pdo, 'bulk_delete_certificates', implode(',', $ids));
+            $msg = count($ids) . ' certificate(s) deleted.';
+        } else {
+            $newStatus = $action === 'activate' ? 'active' : 'revoked';
+            $pdo->prepare("UPDATE certificates SET status=? WHERE id IN ($placeholders)")
+                ->execute(array_merge([$newStatus], $ids));
+            audit($pdo, 'bulk_' . $action . '_certificates', implode(',', $ids));
+            $msg = count($ids) . ' certificate(s) ' . ($action === 'activate' ? 'activated' : 'revoked') . '.';
+        }
+    }
+}
+
+// ---- Search + filters (GET, shared by the table view and the CSV export) ----
+$q            = trim($_GET['q'] ?? '');
+$statusFilter = in_array($_GET['status'] ?? '', ['active', 'revoked'], true) ? $_GET['status'] : '';
+$fromDate     = $_GET['from_date'] ?? '';
+$toDate       = $_GET['to_date'] ?? '';
+
+$where = [];
+$params = [];
+if ($q !== '') {
+    $where[] = '(full_name LIKE ? OR certificate_no LIKE ? OR member_id LIKE ? OR title LIKE ?)';
+    $like = "%$q%";
+    array_push($params, $like, $like, $like, $like);
+}
+if ($statusFilter !== '') {
+    $where[] = 'status = ?';
+    $params[] = $statusFilter;
+}
+if ($fromDate !== '') {
+    $where[] = 'issue_date >= ?';
+    $params[] = $fromDate;
+}
+if ($toDate !== '') {
+    $where[] = 'issue_date <= ?';
+    $params[] = $toDate;
+}
+$whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+$stmt = $pdo->prepare("SELECT * FROM certificates $whereSql ORDER BY created_at DESC");
+$stmt->execute($params);
+$certs = $stmt->fetchAll();
+
+// ---- Download all (or filtered) issued certificates as CSV — must run
+// before any HTML output ----
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="eesa-certificates-' . date('Y-m-d') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputs($out, "\xEF\xBB\xBF");
+    fputcsv($out, ['Certificate No', 'Name', 'Member ID', 'Title', 'Issued By', 'Issue Date', 'Status']);
+    foreach ($certs as $c) {
+        fputcsv($out, [
+            $c['certificate_no'],
+            $c['full_name'],
+            $c['member_id'],
+            $c['title'],
+            $c['issued_by'],
+            date('d M Y', strtotime($c['issue_date'])),
+            $c['status'],
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 $members = $pdo->query("SELECT id, full_name, member_id FROM users WHERE status='approved' AND member_id IS NOT NULL ORDER BY full_name")->fetchAll();
+
+// Build the querystring for the "download filtered" link, minus `export`
+$exportQuery = $_GET;
+unset($exportQuery['export']);
+$exportQuery['export'] = 'csv';
+
 require __DIR__ . '/layout_header.php';
 ?>
 <h1>Certifications</h1>
@@ -68,25 +173,95 @@ require __DIR__ . '/layout_header.php';
 </div>
 
 <h2 style="margin-top:32px">All Certificates</h2>
-<table class="admin-table">
-  <tr><th>Cert No.</th><th>Name</th><th>Member ID</th><th>Title</th><th>Issued</th><th>Status</th><th></th></tr>
-  <?php foreach ($certs as $c): ?>
+
+<!-- Search & filter bar -->
+<form method="GET" class="card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+  <div class="field" style="margin-bottom:0;flex:1;min-width:220px">
+    <label>Search</label>
+    <input type="text" name="q" value="<?= h($q) ?>" placeholder="Name, cert no, member ID, or title">
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <label>Status</label>
+    <select name="status">
+      <option value="">All</option>
+      <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Active</option>
+      <option value="revoked" <?= $statusFilter === 'revoked' ? 'selected' : '' ?>>Revoked</option>
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <label>Issued From</label>
+    <input type="date" name="from_date" value="<?= h($fromDate) ?>">
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <label>Issued To</label>
+    <input type="date" name="to_date" value="<?= h($toDate) ?>">
+  </div>
+  <button class="btn btn-outline btn-sm" type="submit">Filter</button>
+  <?php if ($q !== '' || $statusFilter !== '' || $fromDate !== '' || $toDate !== ''): ?>
+    <a class="btn btn-outline btn-sm" href="certifications.php">Clear</a>
+  <?php endif; ?>
+  <a class="btn btn-primary btn-sm" href="?<?= h(http_build_query($exportQuery)) ?>">
+    Download <?= ($q !== '' || $statusFilter !== '' || $fromDate !== '' || $toDate !== '') ? 'Filtered' : 'All' ?> (CSV)
+  </a>
+</form>
+
+<form method="POST" id="bulkForm">
+  <?= csrf_field() ?>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+    <select name="bulk_action" style="width:200px">
+      <option value="">Bulk action…</option>
+      <option value="activate">Activate selected</option>
+      <option value="revoke">Revoke selected</option>
+      <option value="delete">Delete selected</option>
+    </select>
+    <button class="btn btn-outline btn-sm" type="submit" name="apply_bulk"
+            onclick="return confirmBulk(this.form)">Apply</button>
+    <span class="muted mono" style="font-size:12px"><?= count($certs) ?> shown</span>
+  </div>
+
+  <table class="admin-table">
     <tr>
-      <td class="mono"><?= h($c['certificate_no']) ?></td>
-      <td><?= h($c['full_name']) ?></td>
-      <td class="mono"><?= h($c['member_id']) ?></td>
-      <td><?= h($c['title']) ?></td>
-      <td class="mono" style="font-size:12px"><?= h(date('d M Y', strtotime($c['issue_date']))) ?></td>
-      <td><span class="pill pill-<?= $c['status']==='active'?'approved':'rejected' ?>"><?= h($c['status']) ?></span></td>
-      <td style="white-space:nowrap">
-        <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/pages/verify_certificate.php?cert=<?= h($c['certificate_no']) ?>" target="_blank">View</a>
-        <form method="POST" style="display:inline">
-          <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-          <input type="hidden" name="new_status" value="<?= $c['status']==='active'?'revoked':'active' ?>">
-          <button class="btn btn-danger btn-sm" type="submit" name="toggle_revoke"><?= $c['status']==='active'?'Revoke':'Reactivate' ?></button>
-        </form>
-      </td>
+      <th style="width:28px"><input type="checkbox" id="selectAll"></th>
+      <th>Cert No.</th><th>Name</th><th>Member ID</th><th>Title</th><th>Issued</th><th>Status</th><th></th>
     </tr>
-  <?php endforeach; ?>
-</table>
+    <?php if (!$certs): ?>
+      <tr><td colspan="8" class="muted">No certificates match your filters.</td></tr>
+    <?php endif; ?>
+    <?php foreach ($certs as $c): ?>
+      <tr>
+        <td><input type="checkbox" name="cert_ids[]" value="<?= (int)$c['id'] ?>" class="rowCheck"></td>
+        <td class="mono"><?= h($c['certificate_no']) ?></td>
+        <td><?= h($c['full_name']) ?></td>
+        <td class="mono"><?= h($c['member_id']) ?></td>
+        <td><?= h($c['title']) ?></td>
+        <td class="mono" style="font-size:12px"><?= h(date('d M Y', strtotime($c['issue_date']))) ?></td>
+        <td><span class="pill pill-<?= $c['status'] === 'active' ? 'approved' : 'rejected' ?>"><?= h($c['status']) ?></span></td>
+        <td style="white-space:nowrap">
+          <a class="btn btn-outline btn-sm" href="<?= BASE_URL ?>/pages/verify_certificate.php?cert=<?= h($c['certificate_no']) ?>" target="_blank">View</a>
+          <button class="btn btn-danger btn-sm" type="submit" name="toggle_revoke" value="<?= (int)$c['id'] ?>">
+            <?= $c['status'] === 'active' ? 'Revoke' : 'Reactivate' ?>
+          </button>
+          <button class="btn btn-danger btn-sm" type="submit" name="delete_cert" value="<?= (int)$c['id'] ?>"
+                  onclick="return confirm('Permanently delete certificate <?= h(addslashes($c['certificate_no'])) ?>?');">
+            Delete
+          </button>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
+</form>
+
+<script>
+document.getElementById('selectAll').addEventListener('change', function () {
+  document.querySelectorAll('.rowCheck').forEach(cb => cb.checked = this.checked);
+});
+function confirmBulk(form) {
+  const action = form.bulk_action.value;
+  const count = form.querySelectorAll('.rowCheck:checked').length;
+  if (!action) { alert('Choose a bulk action first.'); return false; }
+  if (!count) { alert('Select at least one certificate.'); return false; }
+  const verb = action === 'delete' ? 'permanently delete' : action;
+  return confirm(`Are you sure you want to ${verb} ${count} certificate(s)?`);
+}
+</script>
 <?php require __DIR__ . '/layout_footer.php'; ?>
