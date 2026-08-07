@@ -39,6 +39,9 @@
   <a href="<?= BASE_URL ?>/pages/gallery.php">Gallery</a>
   <a href="<?= BASE_URL ?>/pages/aptitude.php">Aptitude Results</a>
   <a href="<?= BASE_URL ?>/pages/contact.php">Contact</a>
+  <a href="<?= BASE_URL ?>/pages/projects.php">Projects</a>
+<a href="<?= BASE_URL ?>/pages/courses.php">Courses</a>
+<a href="<?= BASE_URL ?>/pages/verify_certificate.php">Verify Certificate</a>
   <?php if (is_logged_in()): ?>
     <a href="<?= BASE_URL ?>/pages/account.php">My Account</a>
 
