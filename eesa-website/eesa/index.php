@@ -42,8 +42,7 @@ require __DIR__ . '/includes/header.php';
 
 <div class="container"><div class="trace"></div></div>
 
-<section class="section">
-    <?php if ($slidePhotos): ?>
+<?php if ($slidePhotos): ?>
 <section class="section" style="padding-top:0">
   <div class="container">
     <div class="home-slideshow" id="homeSlideshow">
@@ -57,6 +56,8 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 <?php endif; ?>
+
+<section class="section">
   <div class="container">
     <div class="section-head">
       <h2>Latest Announcements</h2>
