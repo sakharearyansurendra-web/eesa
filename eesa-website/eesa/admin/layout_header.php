@@ -33,6 +33,10 @@ $activeSection = $activeSection ?? '';
       <a href="<?= BASE_URL ?>/admin/team.php" class="<?= $activeSection==='team'?'active':'' ?>">Team</a>
       <a href="<?= BASE_URL ?>/admin/department.php" class="<?= $activeSection==='department'?'active':'' ?>">Department</a>
       <a href="<?= BASE_URL ?>/admin/messages.php" class="<?= $activeSection==='messages'?'active':'' ?>">Contact Messages</a>
+    <a href="<?= BASE_URL ?>/admin/projects.php" class="<?= $activeSection==='projects'?'active':'' ?>">Projects</a>
+<a href="<?= BASE_URL ?>/admin/courses.php" class="<?= $activeSection==='courses'?'active':'' ?>">Courses</a>
+<a href="<?= BASE_URL ?>/admin/certifications.php" class="<?= $activeSection==='certifications'?'active':'' ?>">Certifications</a>
+<a href="<?= BASE_URL ?>/admin/certificate_reports.php" class="<?= $activeSection==='certificate_reports'?'active':'' ?>">Cert. Reports</a>
     <?php endif; ?>
 
     <?php if (has_role(APTITUDE_ROLES)): ?>
