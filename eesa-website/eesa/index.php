@@ -34,6 +34,20 @@ require __DIR__ . '/includes/header.php';
 <div class="container"><div class="trace"></div></div>
 
 <section class="section">
+    <?php if ($slidePhotos): ?>
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="home-slideshow" id="homeSlideshow">
+      <?php foreach ($slidePhotos as $i => $sp): ?>
+        <div class="home-slide <?= $i === 0 ? 'active' : '' ?>">
+          <img src="<?= BASE_URL ?>/uploads/gallery/<?= h($sp['filename']) ?>" alt="<?= h($sp['event_name']) ?>">
+          <div class="home-slide-cap"><?= h($sp['event_name']) ?></div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
   <div class="container">
     <div class="section-head">
       <h2>Latest Announcements</h2>
