@@ -305,3 +305,39 @@ table.admin-table th{ font-family:var(--font-mono); font-size:12px; text-transfo
   color:#fff; font-family:var(--font-mono); font-size:13px;
 }
 @media (max-width:600px){ .home-slideshow{ aspect-ratio:4/3; } }
+/* ---------- Login: glitch card ---------- */
+.glitch-form-wrapper{ display:flex; justify-content:center; padding:70px 20px; }
+.glitch-card{
+  width:100%; max-width:380px; background:#0a0e14; border:1px solid #1c2b33;
+  border-radius:12px; overflow:hidden; box-shadow:0 0 50px rgba(53,212,232,0.08);
+}
+.card-header{
+  display:flex; justify-content:space-between; align-items:center; padding:14px 18px;
+  background:#0d1a20; border-bottom:1px solid rgba(53,212,232,.25);
+}
+.card-title{ display:flex; align-items:center; gap:8px; color:var(--copper-lt); font-family:var(--font-mono); font-size:13px; letter-spacing:.08em; }
+.card-title svg{ width:18px; height:18px; }
+.card-dots{ display:flex; gap:6px; }
+.card-dots span{ width:8px; height:8px; border-radius:50%; background:#2a3b42; }
+.card-dots span:nth-child(1){ background:var(--danger); }
+.card-dots span:nth-child(2){ background:var(--spark); }
+.card-dots span:nth-child(3){ background:var(--ok); }
+.card-body{ padding:30px 24px; display:flex; flex-direction:column; gap:26px; }
+.form-group{ position:relative; }
+.form-group input{
+  width:100%; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,.22);
+  padding:10px 2px; color:var(--paper); font-family:var(--font-mono); font-size:14px; outline:none; border-radius:0;
+}
+.form-group input:focus{ border-bottom-color:var(--copper); }
+.form-label{
+  position:absolute; left:2px; top:10px; color:rgba(255,255,255,.4);
+  font-family:var(--font-mono); font-size:13px; letter-spacing:.06em; pointer-events:none; transition:.2s ease;
+}
+.form-group input:focus + .form-label,
+.form-group input:not(:placeholder-shown) + .form-label{ top:-14px; font-size:11px; color:var(--copper-lt); }
+.submit-btn{
+  background:var(--copper); color:#03191d; border:none; padding:13px; border-radius:6px;
+  font-family:var(--font-mono); font-weight:600; letter-spacing:.05em; cursor:pointer; transition:background .15s ease;
+}
+.submit-btn:hover{ background:var(--copper-lt); }
+.submit-btn:active{ transform:scale(.98); }
