@@ -205,7 +205,6 @@ require __DIR__ . '/layout_header.php';
   <h3>Bulk Upload Certificates (CSV)</h3>
   <p class="muted" style="font-size:13px">
     CSV columns: <span class="mono">member_id, title, issued_by, issue_date</span> (header row optional).
-    Each row is matched to a member by their existing Member ID — unmatched rows are skipped and listed in the result message. Works just like the Aptitude CSV upload.
   </p>
   <form method="POST" enctype="multipart/form-data" class="stack">
     <?= csrf_field() ?>
