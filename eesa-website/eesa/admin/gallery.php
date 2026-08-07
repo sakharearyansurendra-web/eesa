@@ -51,11 +51,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
     $msg = 'Deleted.';
 }
 
+// ---- Remove a single photo entirely ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_photo'])) {
+    csrf_check();
+    $id = (int)$_POST['photo_id'];
+    $stmt = $pdo->prepare('SELECT filename FROM gallery_photos WHERE id=?');
+    $stmt->execute([$id]);
+    $fname = $stmt->fetchColumn();
+    $pdo->prepare('DELETE FROM gallery_photos WHERE id=?')->execute([$id]);
+    if ($fname) {
+        $path = __DIR__ . '/../uploads/gallery/' . $fname;
+        if (is_file($path)) unlink($path);
+    }
+    $msg = 'Photo removed.';
+}
+
+// ---- Toggle whether a photo appears in the homepage slideshow ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_home_feature'])) {
+    csrf_check();
+    $id = (int)$_POST['photo_id'];
+    $cur = $pdo->prepare('SELECT featured_home FROM gallery_photos WHERE id=?');
+    $cur->execute([$id]);
+    $curVal = (int)$cur->fetchColumn();
+    if ($curVal) {
+        $pdo->prepare('UPDATE gallery_photos SET featured_home=0, home_sort_order=0 WHERE id=?')->execute([$id]);
+        $msg = 'Removed from homepage slideshow.';
+    } else {
+        $maxOrder = (int)$pdo->query('SELECT COALESCE(MAX(home_sort_order),0) FROM gallery_photos WHERE featured_home=1')->fetchColumn();
+        $pdo->prepare('UPDATE gallery_photos SET featured_home=1, home_sort_order=? WHERE id=?')->execute([$maxOrder + 1, $id]);
+        $msg = 'Added to homepage slideshow.';
+    }
+    audit($pdo, 'toggle_home_feature', "photo #$id");
+}
+
+// ---- Reorder a featured photo's position in the slideshow ----
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['move_home_photo'])) {
+    csrf_check();
+    $id = (int)$_POST['photo_id'];
+    $dir = $_POST['direction'] === 'up' ? 'up' : 'down';
+    $cur = $pdo->prepare('SELECT home_sort_order FROM gallery_photos WHERE id=? AND featured_home=1');
+    $cur->execute([$id]);
+    $curOrder = $cur->fetchColumn();
+    if ($curOrder !== false) {
+        $cmp = $dir === 'up' ? '<' : '>';
+        $ord = $dir === 'up' ? 'DESC' : 'ASC';
+        $nStmt = $pdo->prepare("SELECT id, home_sort_order FROM gallery_photos WHERE featured_home=1 AND home_sort_order $cmp ? ORDER BY home_sort_order $ord LIMIT 1");
+        $nStmt->execute([$curOrder]);
+        $neighbor = $nStmt->fetch();
+        if ($neighbor) {
+            $pdo->prepare('UPDATE gallery_photos SET home_sort_order=? WHERE id=?')->execute([$neighbor['home_sort_order'], $id]);
+            $pdo->prepare('UPDATE gallery_photos SET home_sort_order=? WHERE id=?')->execute([$curOrder, $neighbor['id']]);
+        }
+    }
+}
+
 $events = $pdo->query('SELECT * FROM gallery_events ORDER BY event_date DESC')->fetchAll();
+
+$featuredPhotos = $pdo->query(
+    'SELECT gp.*, ge.event_name FROM gallery_photos gp
+     JOIN gallery_events ge ON ge.id = gp.gallery_event_id
+     WHERE gp.featured_home = 1 ORDER BY gp.home_sort_order, gp.id'
+)->fetchAll();
+
 require __DIR__ . '/layout_header.php';
 ?>
 <h1>Gallery</h1>
 <?php if ($msg): ?><div class="alert alert-ok"><?= h($msg) ?></div><?php endif; ?>
+
+<div class="card" style="margin-bottom:24px">
+  <h3>Homepage Slideshow (<?= count($featuredPhotos) ?> selected)</h3>
+  <p class="muted" style="font-size:13px">Only these photos appear in the homepage slideshow, in this order, changing every 10 seconds. Toggle "Feature on Homepage" on any photo below, from any event, to add it here.</p>
+  <?php if (!$featuredPhotos): ?>
+    <p class="muted">Nothing selected yet — the slideshow stays hidden on the homepage until you feature at least one photo.</p>
+  <?php else: ?>
+    <div class="grid grid-4">
+      <?php foreach ($featuredPhotos as $fp): ?>
+        <div>
+          <img class="thumb" src="<?= BASE_URL ?>/uploads/gallery/<?= h($fp['filename']) ?>">
+          <p class="muted mono" style="font-size:11px;margin:4px 0"><?= h($fp['event_name']) ?></p>
+          <div style="display:flex;gap:6px">
+            <form method="POST" style="display:inline"><?= csrf_field() ?><input type="hidden" name="photo_id" value="<?= (int)$fp['id'] ?>"><input type="hidden" name="direction" value="up">
+              <button class="btn btn-outline btn-sm" type="submit" name="move_home_photo">&uarr;</button></form>
+            <form method="POST" style="display:inline"><?= csrf_field() ?><input type="hidden" name="photo_id" value="<?= (int)$fp['id'] ?>"><input type="hidden" name="direction" value="down">
+              <button class="btn btn-outline btn-sm" type="submit" name="move_home_photo">&darr;</button></form>
+            <form method="POST" style="display:inline"><?= csrf_field() ?><input type="hidden" name="photo_id" value="<?= (int)$fp['id'] ?>">
+              <button class="btn btn-danger btn-sm" type="submit" name="toggle_home_feature">Remove</button></form>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+</div>
 
 <div class="card form-card" style="max-width:640px">
   <h3>New Gallery Event</h3>
@@ -70,7 +156,11 @@ require __DIR__ . '/layout_header.php';
 </div>
 
 <h2 style="margin-top:32px">All Events</h2>
-<?php foreach ($events as $e): ?>
+<?php foreach ($events as $e):
+    $photosStmt = $pdo->prepare('SELECT * FROM gallery_photos WHERE gallery_event_id=? ORDER BY sort_order, id');
+    $photosStmt->execute([$e['id']]);
+    $photos = $photosStmt->fetchAll();
+?>
   <div class="card" style="margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div>
@@ -85,7 +175,32 @@ require __DIR__ . '/layout_header.php';
         </form>
       </div>
     </div>
-    <form method="POST" enctype="multipart/form-data" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+
+    <?php if ($photos): ?>
+      <div class="grid grid-4" style="margin-top:14px">
+        <?php foreach ($photos as $p): ?>
+          <div>
+            <img class="thumb" src="<?= BASE_URL ?>/uploads/gallery/<?= h($p['filename']) ?>">
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+              <form method="POST" style="display:inline">
+                <?= csrf_field() ?><input type="hidden" name="photo_id" value="<?= (int)$p['id'] ?>">
+                <button class="btn <?= $p['featured_home'] ? 'btn-primary' : 'btn-outline' ?> btn-sm" type="submit" name="toggle_home_feature">
+                  <?= $p['featured_home'] ? '✓ On Homepage' : 'Feature on Homepage' ?>
+                </button>
+              </form>
+              <form method="POST" style="display:inline" onsubmit="return confirm('Remove this photo?')">
+                <?= csrf_field() ?><input type="hidden" name="photo_id" value="<?= (int)$p['id'] ?>">
+                <button class="btn btn-danger btn-sm" type="submit" name="delete_photo">Remove</button>
+              </form>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <p class="muted" style="margin-top:10px">No photos in this event yet.</p>
+    <?php endif; ?>
+
+    <form method="POST" enctype="multipart/form-data" style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <?= csrf_field() ?><input type="hidden" name="event_id" value="<?= (int)$e['id'] ?>">
       <input type="file" name="more_photos[]" accept="image/*" multiple>
       <button class="btn btn-outline btn-sm" type="submit" name="add_photos">Add Photos</button>
