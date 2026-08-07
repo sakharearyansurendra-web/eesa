@@ -203,7 +203,27 @@ require __DIR__ . '/layout_header.php';
 </div>
 
 <h2 style="margin-top:32px">All Certificates</h2>
-
+<div class="card form-card" style="max-width:560px;margin-top:24px">
+  <h3>Bulk Upload Certificates (CSV)</h3>
+  <p class="muted" style="font-size:13px">
+    CSV columns: <span class="mono">member_id, title, issued_by, issue_date</span> (header row optional).
+    Each row is matched to a member by their existing Member ID — unmatched rows are skipped and listed in the result message. Works just like the Aptitude CSV upload.
+  </p>
+  <form method="POST" enctype="multipart/form-data" class="stack">
+    <?= csrf_field() ?>
+    <label class="cert-dropzone" for="certsCsvInput">
+      <div class="cert-dropzone-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+        </svg>
+      </div>
+      <div class="cert-dropzone-text" id="certsCsvLabel"><span>Click to choose a CSV file</span></div>
+      <input id="certsCsvInput" type="file" name="certs_csv" accept=".csv" required
+             onchange="document.getElementById('certsCsvLabel').innerHTML = '<span>' + (this.files[0] ? this.files[0].name : 'Click to choose a CSV file') + '</span>'">
+    </label>
+    <button class="btn btn-primary" type="submit" name="bulk_upload_certs" style="margin-top:14px">Upload &amp; Issue Certificates</button>
+  </form>
+</div>
 <!-- Search & filter bar -->
 <form method="GET" class="card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
   <div class="field" style="margin-bottom:0;flex:1;min-width:220px">
