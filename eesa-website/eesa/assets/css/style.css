@@ -341,3 +341,41 @@ table.admin-table th{ font-family:var(--font-mono); font-size:12px; text-transfo
 }
 .submit-btn:hover{ background:var(--copper-lt); }
 .submit-btn:active{ transform:scale(.98); }
+/* ---------- Join: neon card ---------- */
+.neon-wrapper{ display:flex; flex-direction:column; align-items:center; gap:22px; padding:20px 0; }
+.form{
+  display:flex; flex-direction:column; gap:10px; width:100%; max-width:380px;
+  padding:24px; border-radius:20px; background-color:#1a1a1a; color:#fff; border:1px solid #333;
+}
+.form .title{
+  font-family:var(--font-display); font-size:26px; font-weight:600; letter-spacing:-1px;
+  position:relative; display:flex; align-items:center; padding-left:30px; color:var(--copper);
+  margin-bottom:4px;
+}
+.form .title::before, .form .title::after{
+  position:absolute; content:''; height:16px; width:16px; border-radius:50%; left:0px; background-color:var(--copper);
+}
+.form .title::after{ animation:neonPulse 1s linear infinite; }
+.form .message{ font-size:14px; color:rgba(255,255,255,0.65); margin:0 0 4px; }
+.form .signin{ font-size:14px; color:rgba(255,255,255,0.65); text-align:center; }
+.form .signin a{ color:var(--copper); }
+.form .signin a:hover{ text-decoration:underline; }
+.form .flex{ display:flex; width:100%; gap:8px; }
+.form label{ position:relative; display:block; }
+.form label .input{
+  background-color:#2b2b2b; color:#fff; width:100%; padding:20px 10px 6px 12px;
+  outline:0; border:1px solid rgba(105,105,105,0.4); border-radius:10px; font-size:14px; font-family:var(--font-body);
+}
+.form label .input + span{
+  color:rgba(255,255,255,0.5); position:absolute; left:12px; top:2px; font-size:0.9em; cursor:text; transition:.2s ease;
+}
+.form label .input:placeholder-shown + span{ top:14px; font-size:0.9em; }
+.form label .input:focus + span, .form label .input:not(:placeholder-shown) + span{
+  color:var(--copper); top:2px; font-size:0.7em; font-weight:600;
+}
+.form .submit{
+  border:none; outline:none; padding:12px; border-radius:10px; color:#03191d; font-size:15px;
+  font-weight:600; background-color:var(--copper); cursor:pointer; transition:background .2s ease; margin-top:4px;
+}
+.form .submit:hover{ background-color:var(--copper-lt); }
+@keyframes neonPulse{ from{ transform:scale(0.9); opacity:1; } to{ transform:scale(1.8); opacity:0; } }
