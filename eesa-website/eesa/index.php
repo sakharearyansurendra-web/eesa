@@ -8,7 +8,8 @@ $announcements = $pdo->query(
 $slidePhotos = $pdo->query(
     'SELECT gp.filename, ge.event_name FROM gallery_photos gp
      JOIN gallery_events ge ON ge.id = gp.gallery_event_id
-     ORDER BY gp.id DESC LIMIT 10'
+     WHERE gp.featured_home = 1
+     ORDER BY gp.home_sort_order, gp.id'
 )->fetchAll();
 
 $featuredProjects = $pdo->query(
