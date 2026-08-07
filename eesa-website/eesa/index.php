@@ -103,5 +103,26 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </section>
-
+<?php if ($featuredProjects): ?>
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Featured Projects</h2>
+      <a href="<?= BASE_URL ?>/pages/projects.php" class="btn btn-outline btn-sm">View all</a>
+    </div>
+    <div class="grid grid-3">
+      <?php foreach ($featuredProjects as $p): ?>
+        <a class="card-link" href="<?= BASE_URL ?>/pages/project_view.php?slug=<?= h($p['slug']) ?>">
+          <div class="card">
+            <?php if ($p['cover_image']): ?><img class="thumb" src="<?= BASE_URL ?>/uploads/projects/<?= h($p['cover_image']) ?>"><?php endif; ?>
+            <div class="meta"><span class="badge badge-<?= $p['status']==='completed'?'completed':'ongoing' ?>"><?= h(ucfirst($p['status'])) ?></span></div>
+            <h3><?= h($p['title']) ?></h3>
+            <p><?= h($p['summary']) ?></p>
+          </div>
+        </a>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>
