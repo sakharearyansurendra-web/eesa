@@ -45,6 +45,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['move_project'])) {
         $pdo->prepare('UPDATE projects SET sort_order=? WHERE id=?')->execute([$curOrder, $neighbor['id']]);
     }
 }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_featured'])) {
+    csrf_check();
+    $id = (int)$_POST['id'];
+    $cur = $pdo->prepare('SELECT featured_home FROM projects WHERE id=?');
+    $cur->execute([$id]);
+    $curVal = (int)$cur->fetchColumn();
+    $new = $curVal ? 0 : 1;
+    $pdo->prepare('UPDATE projects SET featured_home=? WHERE id=?')->execute([$new, $id]);
+    audit($pdo, 'toggle_project_featured', "#$id -> " . ($new ? 'featured' : 'unfeatured'));
+    $msg = $new ? 'Project will now show on the homepage.' : 'Project removed from the homepage.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_credit'])) {
     csrf_check();
