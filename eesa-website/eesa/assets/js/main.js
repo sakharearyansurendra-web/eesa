@@ -6,6 +6,24 @@ document.addEventListener('DOMContentLoaded', function () {
   const menu = document.getElementById('sideMenu');
   const overlay = document.getElementById('navOverlay');
 
+// Visible calendar icon + click-to-open for every date/datetime input,
+// site-wide — works even where the native icon has no visible styling hook.
+document.querySelectorAll('input[type="date"], input[type="datetime-local"]').forEach(function (input) {
+  if (input.closest('.date-field')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'date-field';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const icon = document.createElement('span');
+  icon.className = 'date-field-icon';
+  icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+  wrap.appendChild(icon);
+  icon.addEventListener('click', function () {
+    if (typeof input.showPicker === 'function') input.showPicker();
+    else input.focus();
+  });
+});
+  
   function openMenu() {
     burger.classList.add('open');
     menu.classList.add('open');
