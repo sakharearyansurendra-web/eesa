@@ -387,11 +387,24 @@ table.admin-table th{ font-family:var(--font-mono); font-size:12px; text-transfo
   background-repeat:no-repeat; background-position:right 10px center; padding-right:30px;
 }
 .form label select.input:disabled{ opacity:0.4; cursor:not-allowed; }
-.checkbox-row{ display:flex; gap:18px; flex-wrap:wrap; margin:2px 0; }
-.checkbox-row label{
-  display:flex; align-items:center; gap:7px; font-size:13.5px; color:rgba(255,255,255,0.75);
-  cursor:pointer; padding:0;
+/* ---------- Join form: member-type toggle chips ---------- */
+.type-toggle-row{ display:flex; flex-direction:column; gap:6px; margin:2px 0 4px; }
+.type-toggle-row > span{
+  font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,0.45);
 }
-.checkbox-row input[type="checkbox"]{
-  width:16px; height:16px; accent-color:#00bfff; cursor:pointer; margin:0;
+.type-toggle{ display:flex; gap:8px; }
+.type-toggle input[type="checkbox"]{
+  position:absolute; opacity:0; width:0; height:0; pointer-events:none;
 }
+.type-toggle .toggle-chip{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:10px 12px; border-radius:10px; border:1px solid rgba(105,105,105,0.4);
+  background:#2b2b2b; color:rgba(255,255,255,0.65); font-size:13.5px; font-weight:500;
+  cursor:pointer; user-select:none; transition:background .15s ease, border-color .15s ease, color .15s ease;
+}
+.type-toggle .toggle-chip svg{ width:15px; height:15px; flex-shrink:0; opacity:0; transition:opacity .15s ease; }
+.type-toggle input[type="checkbox"]:checked + .toggle-chip{
+  background:rgba(0,191,255,0.12); border-color:#00bfff; color:#00bfff; font-weight:600;
+}
+.type-toggle input[type="checkbox"]:checked + .toggle-chip svg{ opacity:1; }
+.type-toggle input[type="checkbox"]:focus-visible + .toggle-chip{ outline:2px solid #00bfff; outline-offset:1px; }
