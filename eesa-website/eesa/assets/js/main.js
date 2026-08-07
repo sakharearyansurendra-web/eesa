@@ -2,6 +2,19 @@
 // Hamburger -> cross, right-side slide menu
 // ---------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', function () {
+  // Homepage photo slideshow — auto-advances every 10 seconds
+const slideshow = document.getElementById('homeSlideshow');
+if (slideshow) {
+  const slides = slideshow.querySelectorAll('.home-slide');
+  let current = 0;
+  if (slides.length > 1) {
+    setInterval(() => {
+      slides[current].classList.remove('active');
+      current = (current + 1) % slides.length;
+      slides[current].classList.add('active');
+    }, 10000);
+  }
+}
   const burger = document.getElementById('burger');
   const menu = document.getElementById('sideMenu');
   const overlay = document.getElementById('navOverlay');
