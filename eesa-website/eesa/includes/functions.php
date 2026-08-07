@@ -251,3 +251,26 @@ function time_ago($datetime) {
     if ($diff < 604800) return floor($diff/86400) . 'd ago';
     return date('d M Y', strtotime($datetime));
 }
+function generate_certificate_no() {
+    global $pdo;
+    $year = date('Y');
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    do {
+        $code = '';
+        for ($i = 0; $i < 6; $i++) $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        $candidate = "EESA-CERT-$year-$code";
+        $stmt = $pdo->prepare('SELECT id FROM certificates WHERE certificate_no = ? LIMIT 1');
+        $stmt->execute([$candidate]);
+    } while ($stmt->fetch());
+    return $candidate;
+}
+
+/** Accepts a full YouTube URL (watch/embed/shorts/youtu.be) or a bare 11-char video ID. */
+function youtube_id_from_url($url) {
+    $url = trim($url);
+    if (preg_match('~^[a-zA-Z0-9_-]{11}$~', $url)) return $url;
+    if (preg_match('~(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/|shorts/))([a-zA-Z0-9_-]{11})~', $url, $m)) {
+        return $m[1];
+    }
+    return null;
+}
