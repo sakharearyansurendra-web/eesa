@@ -190,6 +190,20 @@ input, select, textarea{
   background:var(--navy); border:1px solid rgba(255,255,255,0.14); border-radius:8px;
   padding:12px 14px; color:#fff; font-family:var(--font-body); font-size:14px; width:100%;
 }
+/* Native date/time picker icon renders solid black by the OS — invisible
+   on this dark theme. Invert it to white/transparent. Chrome/Edge/Safari
+   only (Firefox doesn't expose this pseudo-element yet). */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.6);
+  cursor: pointer;
+  background: transparent;
+  opacity: 0.9;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
 input:focus, select:focus, textarea:focus{ outline:2px solid var(--copper); border-color:var(--copper); }
 textarea{ min-height:120px; resize:vertical; }
 form.stack{ max-width:480px; }
