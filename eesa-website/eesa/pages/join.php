@@ -5,12 +5,37 @@ $pageTitle = 'Join EESA';
 
 $err = null; $msg = null; $ticketId = null;
 
+// Kept centralized here so the dropdown and the server-side validation
+// always agree on what's a legal value.
+const JOIN_BRANCHES = [
+    'Computer Science & Engineering',
+    'Information Technology',
+    'Electronics & Telecommunication',
+    'Mechanical Engineering',
+    'Electrical Engineering',
+    'Civil Engineering',
+    'Chemical Engineering',
+    'Production Engineering',
+    'Textile Technology',
+    'Instrumentation Engineering',
+];
+const JOIN_YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_join'])) {
     csrf_check();
     $name = trim($_POST['full_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
-    $branch = trim($_POST['branch'] ?? '');
-    $year = trim($_POST['year_of_study'] ?? '');
+    $memberType = $_POST['member_type'] ?? 'student'; // student | alumni | faculty
+
+    if ($memberType === 'alumni' || $memberType === 'faculty') {
+        $branch = 'NA';
+        $year = $memberType === 'alumni' ? 'Alumni' : 'Faculty';
+    } else {
+        $branch = trim($_POST['branch'] ?? '');
+        $year = trim($_POST['year_of_study'] ?? '');
+        if (!in_array($branch, JOIN_BRANCHES, true)) $branch = '';
+        if (!in_array($year, JOIN_YEARS, true)) $year = '';
+    }
 
     if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$branch || !$year) {
         $err = 'Please fill all fields with a valid email.';
@@ -43,6 +68,11 @@ if (isset($_GET['ticket_id']) && trim($_GET['ticket_id']) !== '') {
     $trackResult = $stmt->fetch();
     if (!$trackResult) $trackErr = 'No request found with that ticket ID.';
 }
+
+$postedMemberType = $_POST['member_type'] ?? 'student';
+$postedBranch = $_POST['branch'] ?? '';
+$postedYear = $_POST['year_of_study'] ?? '';
+
 require __DIR__ . '/../includes/header.php';
 ?>
 <section class="section">
@@ -56,7 +86,7 @@ require __DIR__ . '/../includes/header.php';
           <p class="mono" style="font-size:22px;color:var(--copper-lt);text-align:center;margin:8px 0"><?= h($ticketId) ?></p>
         </form>
       <?php else: ?>
-        <form class="form" method="POST">
+        <form class="form" method="POST" id="joinForm">
           <p class="title">Join EESA</p>
           <p class="message">Submit your details — an admin will review your request and email your login credentials once approved.</p>
           <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
@@ -69,16 +99,41 @@ require __DIR__ . '/../includes/header.php';
             <input class="input" type="email" name="email" placeholder=" " required value="<?= h($_POST['email'] ?? '') ?>">
             <span>Email</span>
           </label>
-          <div class="flex">
+
+          <div class="checkbox-row">
+            <label>
+              <input type="checkbox" id="isAlumni" <?= $postedMemberType === 'alumni' ? 'checked' : '' ?>>
+              Alumni
+            </label>
+            <label>
+              <input type="checkbox" id="isFaculty" <?= $postedMemberType === 'faculty' ? 'checked' : '' ?>>
+              Faculty Member
+            </label>
+          </div>
+
+          <input type="hidden" name="member_type" id="memberType" value="<?= h($postedMemberType) ?>">
+
+          <div class="flex" id="studentFields">
             <label style="flex:1">
-              <input class="input" type="text" name="branch" placeholder=" " required value="<?= h($_POST['branch'] ?? '') ?>">
+              <select class="input" name="branch" id="branchSelect" <?= $postedMemberType !== 'student' ? 'disabled' : 'required' ?>>
+                <option value="" disabled <?= $postedBranch === '' ? 'selected' : '' ?>></option>
+                <?php foreach (JOIN_BRANCHES as $b): ?>
+                  <option value="<?= h($b) ?>" <?= $postedBranch === $b ? 'selected' : '' ?>><?= h($b) ?></option>
+                <?php endforeach; ?>
+              </select>
               <span>Branch</span>
             </label>
             <label style="flex:1">
-              <input class="input" type="text" name="year_of_study" placeholder=" " required value="<?= h($_POST['year_of_study'] ?? '') ?>">
+              <select class="input" name="year_of_study" id="yearSelect" <?= $postedMemberType !== 'student' ? 'disabled' : 'required' ?>>
+                <option value="" disabled <?= $postedYear === '' ? 'selected' : '' ?>></option>
+                <?php foreach (JOIN_YEARS as $y): ?>
+                  <option value="<?= h($y) ?>" <?= $postedYear === $y ? 'selected' : '' ?>><?= h($y) ?></option>
+                <?php endforeach; ?>
+              </select>
               <span>Year</span>
             </label>
           </div>
+
           <button class="submit" type="submit" name="submit_join">Submit Request</button>
         </form>
       <?php endif; ?>
@@ -106,39 +161,43 @@ require __DIR__ . '/../includes/header.php';
     </div>
   </div>
 </section>
-<?php require __DIR__ . '/../includes/footer.php'; ?>
 
-eesa-website/eesa/pages/team.php
-<?php
-require_once __DIR__ . '/../config.php';
-$pageTitle = 'Team';
+<script>
+(function () {
+  var alumniBox = document.getElementById('isAlumni');
+  var facultyBox = document.getElementById('isFaculty');
+  var memberType = document.getElementById('memberType');
+  var branchSelect = document.getElementById('branchSelect');
+  var yearSelect = document.getElementById('yearSelect');
+  if (!alumniBox || !facultyBox) return; // ticket-confirmation view has none of these
 
-$years = $pdo->query('SELECT * FROM team_years ORDER BY sort_order DESC, year_label DESC')->fetchAll();
+  function sync() {
+    var type = 'student';
+    if (alumniBox.checked) type = 'alumni';
+    else if (facultyBox.checked) type = 'faculty';
+    memberType.value = type;
 
-require __DIR__ . '/../includes/header.php';
-?>
-<section class="section">
-  <div class="container">
-    <div class="eyebrow">Since inception</div>
-    <h1>Our Team, Year by Year</h1>
-    <p class="muted" style="max-width:600px">Every batch that has led EESA — from the very first team to the one steering it today.</p>
+    var isStudent = type === 'student';
+    branchSelect.disabled = !isStudent;
+    yearSelect.disabled = !isStudent;
+    branchSelect.required = isStudent;
+    yearSelect.required = isStudent;
+    if (!isStudent) {
+      branchSelect.value = '';
+      yearSelect.value = '';
+    }
+  }
 
-    <div class="grid grid-3">
-      <?php if (!$years): ?><p class="muted">Team records will appear here once added.</p><?php endif; ?>
-      <?php foreach ($years as $y): ?>
-        <a class="card-link" href="<?= BASE_URL ?>/pages/team_year.php?year=<?= urlencode($y['year_label']) ?>">
-          <div class="card year-card">
-            <?php if ($y['group_photo']): ?>
-              <img src="<?= BASE_URL ?>/uploads/team/<?= h($y['group_photo']) ?>">
-            <?php else: ?>
-              <div class="thumb" style="display:flex;align-items:center;justify-content:center" ><span class="muted mono">No photo yet</span></div>
-            <?php endif; ?>
-            <h3><?= h($y['year_label']) ?></h3>
-            <p class="muted">View this year's team &rarr;</p>
-          </div>
-        </a>
-      <?php endforeach; ?>
-    </div>
-  </div>
-</section>
+  alumniBox.addEventListener('change', function () {
+    if (alumniBox.checked) facultyBox.checked = false;
+    sync();
+  });
+  facultyBox.addEventListener('change', function () {
+    if (facultyBox.checked) alumniBox.checked = false;
+    sync();
+  });
+  sync();
+})();
+</script>
+
 <?php require __DIR__ . '/../includes/footer.php'; ?>
