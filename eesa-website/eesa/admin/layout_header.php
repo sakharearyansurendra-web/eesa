@@ -38,7 +38,7 @@ $activeSection = $activeSection ?? '';
 <a href="<?= BASE_URL ?>/admin/certifications.php" class="<?= $activeSection==='certifications'?'active':'' ?>">Certifications</a>
 <a href="<?= BASE_URL ?>/admin/certificate_reports.php" class="<?= $activeSection==='certificate_reports'?'active':'' ?>">Cert. Reports</a>
     <?php endif; ?>
-
+<a href="<?= BASE_URL ?>/admin/department_glance.php" class="<?= $activeSection==='department_glance'?'active':'' ?>">Dept. at a Glance</a>
     <?php if (has_role(APTITUDE_ROLES)): ?>
       <a href="<?= BASE_URL ?>/admin/aptitude.php" class="<?= $activeSection==='aptitude'?'active':'' ?>">Aptitude Results</a>
     <?php endif; ?>
@@ -55,7 +55,7 @@ $activeSection = $activeSection ?? '';
     <?php if (has_role(['super_admin'])): ?>
       <a href="<?= BASE_URL ?>/admin/audit.php" class="<?= $activeSection==='audit'?'active':'' ?>">Audit Log</a>
     <?php endif; ?>
-
+<a href="<?= BASE_URL ?>/admin/faculty_edit.php" class="<?= $activeSection==='faculty_edit'?'active':'' ?>">My Faculty Profile</a>
     <div style="margin-top:24px;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px">
       <div class="mono muted" style="font-size:12px;padding:0 12px 8px"><?= h($u['full_name']) ?> · <?= h(role_label($u['role'])) ?></div>
       <a href="<?= BASE_URL ?>/pages/account.php">My Account</a>
