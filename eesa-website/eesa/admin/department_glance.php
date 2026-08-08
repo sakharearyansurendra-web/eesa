@@ -72,16 +72,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_facility'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_equipment'])) {
     csrf_check();
     $name = trim($_POST['equip_name']);
-    $qty = max(0, (int)$_POST['quantity']);
+    $qtyRaw = trim($_POST['quantity'] ?? '');
     $mfr = trim($_POST['manufacturer']);
     $model = trim($_POST['model_no']);
     $notes = trim($_POST['equip_notes']);
     $facilityId = (int)($_POST['facility_id'] ?? 0) ?: null;
-    $photo = save_upload('equip_photo', 'dept');
-    $pdo->prepare('INSERT INTO dept_equipment (facility_id, name, quantity, manufacturer, model_no, notes, photo) VALUES (?,?,?,?,?,?,?)')
-        ->execute([$facilityId, $name, $qty, $mfr, $model, $notes, $photo]);
-    audit($pdo, 'add_dept_equipment', "$name x$qty");
-    $msg = 'Equipment added.';
+
+    if ($qtyRaw === '' || !ctype_digit($qtyRaw) || (int)$qtyRaw > 100000) {
+        $err = 'Quantity must be a whole number between 0 and 100,000.';
+    } elseif (!$name) {
+        $err = 'Equipment name is required.';
+    } else {
+        $qty = (int)$qtyRaw;
+        $photo = save_upload('equip_photo', 'dept');
+        $pdo->prepare('INSERT INTO dept_equipment (facility_id, name, quantity, manufacturer, model_no, notes, photo) VALUES (?,?,?,?,?,?,?)')
+            ->execute([$facilityId, $name, $qty, $mfr, $model, $notes, $photo]);
+        audit($pdo, 'add_dept_equipment', "$name x$qty");
+        $msg = 'Equipment added.';
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_equipment'])) {
@@ -189,7 +197,7 @@ require __DIR__ . '/layout_header.php';
   <form method="POST" enctype="multipart/form-data" class="stack">
     <?= csrf_field() ?>
     <div class="field"><label>Name</label><input name="equip_name" placeholder="e.g. Digital Storage Oscilloscope" required></div>
-    <div class="field"><label>Quantity</label><input type="number" name="quantity" min="0" value="1" required></div>
+   <div class="field"><label>Quantity</label><input type="number" name="quantity" min="0" max="100000" value="1" required></div>
     <div class="field"><label>Manufacturer</label><input name="manufacturer" placeholder="e.g. Tektronix"></div>
     <div class="field"><label>Model No.</label><input name="model_no"></div>
     <div class="field"><label>Belongs To (optional)</label>
