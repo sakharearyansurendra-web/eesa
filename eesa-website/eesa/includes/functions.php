@@ -13,7 +13,11 @@ const CONTENT_ADMIN_ROLES = ['super_admin', 'admin', 'president', 'secretary', '
 const APTITUDE_ROLES = ['super_admin', 'admin', 'aptitude_manager'];
 const ALL_ROLES = ['super_admin', 'admin', 'president', 'secretary', 'treasurer', 'csd', 'media_head', 'prm', 'joint_coordinator', 'aptitude_manager', 'hod', 'faculty_coordinator', 'member', 'alumni'];
 const ASSIGNABLE_ROLES = ['member', 'alumni', 'joint_coordinator', 'treasurer', 'csd', 'media_head', 'prm', 'secretary', 'president', 'aptitude_manager', 'admin', 'hod', 'faculty_coordinator']; // super_admin excluded — promoted separately, never via approval/role-change forms
-
+// Department resource management (labs, classrooms, equipment, and the
+// faculty roster itself) — deliberately narrower than CONTENT_ADMIN_ROLES.
+// Faculty members can still edit their OWN profile content regardless of
+// role — that check happens in admin/faculty_edit.php, not here.
+const DEPT_RESOURCE_ROLES = ['super_admin', 'admin', 'secretary', 'president'];
 // Read-only access to the Users & Access accounts list + CSV export.
 // Everyone here can VIEW and DOWNLOAD the account roster; none of them
 // (except super_admin, checked separately) can edit roles, suspend,
